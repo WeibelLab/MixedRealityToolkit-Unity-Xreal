@@ -82,7 +82,7 @@ namespace XREAL.MRTK3.Subsystems
                     UpdateEntireHand();
                 }
                 result = HandJoints;
-                return FullQueryValid;
+                return true;
             }
 
             private void UpdateEntireHand()
