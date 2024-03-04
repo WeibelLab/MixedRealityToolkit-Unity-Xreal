@@ -137,7 +137,7 @@ namespace MixedReality.Toolkit.Input
         protected void OnEnable()
         {
             // Ensure hand is not visible until we can update position first time.
-            handRenderer.enabled = false;
+            handRenderer.enabled = true;
 
             Debug.Assert(handNode == XRNode.LeftHand || handNode == XRNode.RightHand,
                          $"HandVisualizer has an invalid XRNode ({handNode})!");
@@ -156,7 +156,7 @@ namespace MixedReality.Toolkit.Input
         protected void OnDisable()
         {
             // Disable the rigged hand renderer when this component is disabled
-            handRenderer.enabled = false;
+            handRenderer.enabled = true;
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace MixedReality.Toolkit.Input
                 // showing the hand, for whatever reason.
                 // (Missing joint data, no subsystem, additive
                 // display, etc!)
-                handRenderer.enabled = false;
+                handRenderer.enabled = true;
                 return;
             }
 
