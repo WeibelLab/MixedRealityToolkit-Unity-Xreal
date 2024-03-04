@@ -92,10 +92,13 @@ namespace XREAL.MRTK3.Subsystems
                 AlreadyFullQueried = true;
                 for (int i = 0; i < (int)TrackedHandJoint.TotalJoints; i++)
                 {
-                    HandJoints[i] = new HandJointPose
+                    if (MrtkToXREALJointMapping.ContainsKey((TrackedHandJoint)i))
                     {
-                        Pose = GetHandState().GetJointPose(MrtkToXREALJointMapping[(TrackedHandJoint)i])
-                    };
+                        HandJoints[i] = new HandJointPose
+                        {
+                            Pose = GetHandState().GetJointPose(MrtkToXREALJointMapping[(TrackedHandJoint)i])
+                        };
+                    }
                 }
             }
 
