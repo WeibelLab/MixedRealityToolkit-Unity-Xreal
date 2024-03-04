@@ -21,8 +21,6 @@ MonoBehaviour:
   - reference: MixedReality.Toolkit.Speech.Windows.WindowsTextToSpeechSubsystem,
       MixedReality.Toolkit.Speech.Windows
   - reference: MixedReality.Toolkit.Accessibility.MRTKAccessibilitySubsystem, MixedReality.Toolkit.Accessibility
-  - reference: MixedReality.Toolkit.Input.OpenXRHandsSubsystem, MixedReality.Toolkit.Input
-  - reference: MixedReality.Toolkit.Input.SyntheticHandsSubsystem, MixedReality.Toolkit.Input
   - reference: MixedReality.Toolkit.Input.MRTKHandsAggregatorSubsystem, MixedReality.Toolkit.Input
   subsystemConfigs:
     entries:
