@@ -307,8 +307,12 @@ namespace MixedReality.Toolkit.Input
                     return;
                 }
 
+                // lineRenderer.enabled = rayInteractor.isHoverActive;
+
+                int siblingCount =  transform.parent.childCount;
                 // Finally enable the line renderer if we pass the other checks
-                lineRenderer.enabled = rayInteractor.isHoverActive;
+                lineRenderer.enabled = 
+                transform.parent.GetChild(siblingCount - 1).GetChild(0).GetChild(0).gameObject.activeSelf;
 
                 // Exit early if the line renderer is ultimately disabled
                 if (!lineRenderer.enabled)
