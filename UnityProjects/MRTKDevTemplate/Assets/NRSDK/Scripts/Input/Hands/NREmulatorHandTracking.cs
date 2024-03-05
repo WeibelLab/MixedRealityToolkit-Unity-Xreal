@@ -48,7 +48,8 @@ namespace NRKernal
 
         public void Update(HandState rightHand, HandState leftHand)
         {
-            bool isTracked = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+            
+            bool isTracked = (Input.GetKey(KeyCode.Z));
             if (isTracked)
             {
                 m_TargetHandState = m_DefaultTrackedHandState;
