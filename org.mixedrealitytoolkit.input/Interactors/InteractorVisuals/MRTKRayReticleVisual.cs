@@ -88,6 +88,7 @@ namespace MixedReality.Toolkit.Input
                 {
                     bool showReticle = VisibilitySettings == ReticleVisibilitySettings.AllValidSurfaces || rayInteractor.hasHover || rayInteractor.hasSelection ||
                         rayInteractor.enableUIInteraction && rayInteractor.TryGetCurrentUIRaycastResult(out _);
+                    Debug.LogFormat("showReticle{0},{1},{2},{3},{4},{5}",showReticle,VisibilitySettings == ReticleVisibilitySettings.AllValidSurfaces,rayInteractor.hasHover,rayInteractor.hasSelection,rayInteractor.enableUIInteraction,rayInteractor.TryGetCurrentUIRaycastResult(out _));
 
                     if (showReticle)
                     {
