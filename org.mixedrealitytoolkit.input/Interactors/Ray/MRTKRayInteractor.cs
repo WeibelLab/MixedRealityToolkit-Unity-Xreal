@@ -158,10 +158,10 @@ namespace MixedReality.Toolkit.Input
                         if (xrController is ArticulatedHandController handController)
                         {
                             bool isPalmFacingAway = false;
-                            if (XRSubsystemHelpers.HandsAggregator?.TryGetPalmFacingAway(handController.HandNode, out isPalmFacingAway) ?? true)
-                            {
-                                hoverActive &= isPalmFacingAway;
-                            }
+                            // if (XRSubsystemHelpers.HandsAggregator?.TryGetPalmFacingAway(handController.HandNode, out isPalmFacingAway) ?? true)
+                            // {
+                            //     hoverActive &= isPalmFacingAway;
+                            // }
                         }
                     }
 
