@@ -191,6 +191,9 @@ namespace NRKernal
         {
             public override NRNotificationType NotificationType => NRNotificationType.NativeError;
             public NRKernalError KernalError { get; private set; }
+
+            public static Func<NRKernalError, string> ErrorTitleGenerator;
+            public static Func<NRKernalError, string> ErrorContentGenerator;
             /// <summary> Constructor. </summary>
             /// <param name="listener"> The listener.</param>
             public NativeErrorNotification(NRNotificationListener listener) : base(listener)
@@ -209,12 +212,21 @@ namespace NRKernal
                 {
                     this.Trigger(Level.High);
                 }
+                else if (KernalError is NRLicenseExpired
+                    || KernalError is NRLicenseDeviceUnSupported
+                    || KernalError is NRLicenseFeatureUnSupported)
+                {
+                    this.Trigger(Level.Middle);
+                }
             }
 
             public string ErrorTitle
             {
                 get
                 {
+                    string title = ErrorTitleGenerator?.Invoke(KernalError);
+                    if (!string.IsNullOrEmpty(title))
+                        return title;
                     if (KernalError is NRRGBCameraDeviceNotFindError)
                     {
                         return "RGBCamera is disabled";
@@ -227,6 +239,18 @@ namespace NRKernal
                     {
                         return "Not support hand tracking calculation";
                     }
+                    else if (KernalError is NRLicenseExpired)
+                    {
+                        return "License expired";
+                    }
+                    else if (KernalError is NRLicenseFeatureUnSupported)
+                    {
+                        return "License feature is not supported";
+                    }
+                    else if (KernalError is NRLicenseDeviceUnSupported)
+                    {
+                        return "License device is not supported";
+                    }
                     else
                     {
                         return KernalError.GetType().ToString();
@@ -238,6 +262,9 @@ namespace NRKernal
             {
                 get
                 {
+                    string content = ErrorContentGenerator?.Invoke(KernalError);
+                    if (!string.IsNullOrEmpty(content))
+                        return content;
                     if (KernalError is NRRGBCameraDeviceNotFindError)
                     {
                         return NativeConstants.RGBCameraDeviceNotFindErrorTip;
@@ -245,6 +272,18 @@ namespace NRKernal
                     else if (KernalError is NRUnSupportedHandtrackingCalculationError)
                     {
                         return NativeConstants.UnSupportedHandtrackingCalculationErrorTip;
+                    }
+                    else if (KernalError is NRLicenseExpired)
+                    {
+                        return NativeConstants.LicenseExpiredErrorTip;
+                    }
+                    else if (KernalError is NRLicenseFeatureUnSupported)
+                    {
+                        return NativeConstants.LicenseNotSupportRequestedFeature;
+                    }
+                    else if (KernalError is NRLicenseDeviceUnSupported)
+                    {
+                        return NativeConstants.LicenseNotSupportCurrentDevice;
                     }
                     else
                     {

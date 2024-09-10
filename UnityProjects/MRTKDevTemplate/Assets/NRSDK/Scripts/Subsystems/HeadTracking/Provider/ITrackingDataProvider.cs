@@ -22,10 +22,12 @@ namespace NRKernal
 
         bool GetFramePresentTimeByCount(uint count, ref UInt64 timestamp);
 
-        bool InitTrackingType(TrackingType type);
+        bool InitTrackingType(IntegratedSubsystemDescriptor descriptor);
 
-        bool SwitchTrackingType(TrackingType type);
+        bool SwitchTrackingType(IntegratedSubsystemDescriptor descriptor);
 
         void Recenter();
+
+        void RegistInputSubSystemEventCallback(Action<bool> callback);
     }
 }

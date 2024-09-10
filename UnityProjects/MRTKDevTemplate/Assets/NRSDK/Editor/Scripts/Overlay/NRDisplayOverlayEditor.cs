@@ -13,7 +13,7 @@ namespace NRKernal.Experimental
     using UnityEngine;
 
     [CustomEditor(typeof(NRDisplayOverlay))]
-    public class NRDisplayOverlayEditor : Editor
+    public class NRDisplayOverlayEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {

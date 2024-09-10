@@ -21,7 +21,8 @@ namespace NRKernal
         /// <summary> The line renderer. </summary>
         [SerializeField]
         private LineRenderer m_LineRenderer;
-
+        [SerializeField]
+        private bool m_ShowLineInMonoMode = false;
         /// <summary> True to show, false to hide the on hit only. </summary>
         public bool showOnHitOnly;
         /// <summary> The default distance. </summary>
@@ -37,6 +38,11 @@ namespace NRKernal
         protected virtual void LateUpdate()
         {
             if (!NRInput.LaserVisualActive)
+            {
+                m_LineRenderer.enabled = false;
+                return;
+            }
+            if(!m_ShowLineInMonoMode && NRFrame.MonoMode)
             {
                 m_LineRenderer.enabled = false;
                 return;

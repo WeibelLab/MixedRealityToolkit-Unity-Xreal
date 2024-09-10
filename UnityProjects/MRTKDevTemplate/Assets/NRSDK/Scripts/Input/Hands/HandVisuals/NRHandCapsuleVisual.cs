@@ -164,6 +164,8 @@ namespace NRKernal
         public float jointRadius = 0.005f;
         public bool showJoint = true;
 
+        [SerializeField]
+        private bool m_ShowMeshInMonoMode = false;
         private List<CapsuleVisual> m_CapsuleVisuals;
         private List<JointVisual> m_JointVisuals;
 
@@ -267,7 +269,7 @@ namespace NRKernal
 
         private void UpstateCapsuleVisualInfo(CapsuleVisualInfo info, HandState handState)
         {
-            info.shouldRender = handState.isTracked;
+            info.shouldRender = handState.isTracked && (!NRFrame.MonoMode || (NRFrame.MonoMode && m_ShowMeshInMonoMode));
             info.startPos = handState.GetJointPose(info.startHandJointID).position;
             info.endPos = handState.GetJointPose(info.endHandJointID).position;
             info.capsuleRadius = capsuleRadius;
@@ -275,7 +277,7 @@ namespace NRKernal
 
         private void UpdateJointVisualInfo(JointVisualInfo info, HandState handState)
         {
-            info.shouldRender = handState.isTracked;
+            info.shouldRender = handState.isTracked && (!NRFrame.MonoMode || (NRFrame.MonoMode && m_ShowMeshInMonoMode));
             info.jointPos = handState.GetJointPose(info.handJointID).position;
             info.jointRadius = jointRadius;
         }

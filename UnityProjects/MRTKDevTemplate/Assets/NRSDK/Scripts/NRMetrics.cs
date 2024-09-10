@@ -40,6 +40,7 @@ namespace NRKernal
 
             public uint framePresentCount = 0;
             public uint extraFrameCount = 0;
+            public uint tearedFrameCount = 0;
             public uint earlyFrameCount = 0;
             public uint droppedFrameCount = 0;
             public ulong frameLatency = 0;
@@ -54,11 +55,13 @@ namespace NRKernal
                 isFinish = false;
             }
 
-            public void FeedNativeMetricsStats(NativeMetrics nativeMetrics)
+            public void FeedNativeMetricsStats(NativeMetrics nativeMetrics, bool enableTearCollecting)
             {
         #if !UNITY_EDITOR
                     framePresentCount = nativeMetrics.GetCurrFramePresentCount();
                     extraFrameCount = nativeMetrics.GetExtendedFrameCount();
+                    if (enableTearCollecting)
+                        tearedFrameCount = nativeMetrics.GetTearedFrameCount();
                     earlyFrameCount = nativeMetrics.GetEarlyFrameCount();
                     droppedFrameCount = nativeMetrics.GetDroppedFrameCount();
                     frameLatency = nativeMetrics.GetAppFrameLatency();
@@ -68,7 +71,7 @@ namespace NRKernal
 
             override public string ToString()
             {
-                return string.Format("FrameStats: frNum={0}, Prd={1}, UpdPrd={2}, Pre2RdEnd={3}, Upd2RdEnd={4}, Upd2Pre={5}, l_Pre2Post={6}, rPre2Post={7}, lPreToRPost={8}, postToEnd={9}, endToRdEnd={10}, FPC={11}, EFC={12}, early={13}, drop={14}, sdkPrd={15}",
+                return string.Format("FrameStats: frNum={0}, Prd={1}, UpdPrd={2}, Pre2RdEnd={3}, Upd2RdEnd={4}, Upd2Pre={5}, l_Pre2Post={6}, rPre2Post={7}, lPreToRPost={8}, postToEnd={9}, endToRdEnd={10}, FPC={11}, EFC={12}, tear={16}, early={13}, drop={14}, sdkPrd={15}",
                     frameIdx, presentTime - l_preRenderTime, presentTime - updateTime, 
                     endOfFrameInRenderThreadTime - l_preRenderTime,
                     endOfFrameInRenderThreadTime - updateTime,
@@ -77,7 +80,7 @@ namespace NRKernal
                     r_postRenderTime - r_preRenderTime, r_postRenderTime - l_preRenderTime,
                     endOfFrameTime - r_postRenderTime,
                     endOfFrameInRenderThreadTime - endOfFrameTime,
-                    framePresentCount, extraFrameCount, earlyFrameCount, droppedFrameCount, frameLatency);
+                    framePresentCount, extraFrameCount, earlyFrameCount, droppedFrameCount, frameLatency, tearedFrameCount);
             }
         }
 
@@ -97,6 +100,7 @@ namespace NRKernal
             private uint m_FramePresentCountSum = 0;
             private float m_NativeTimeStamp = 0;
             private uint m_ExtraFrameCountSum = 0;
+            private uint m_TearedFrameCountSum = 0;
             private uint m_EarlyFrameCountSum = 0;
             private uint m_DroppedFrameCountSum = 0;
             private ulong m_SdkFrameLatencySum = 0;
@@ -110,6 +114,7 @@ namespace NRKernal
 
             private uint m_FramePresentCountSumAll = 0;
             private uint m_ExtraFrameCountSumAll = 0;
+            private uint m_TearedFrameCountSumAll = 0;
             private uint m_EarlyFrameCountSumAll = 0;
             private uint m_DroppedFrameCountSumAll = 0;
             private ulong m_SdkFrameLatencySumAll = 0;
@@ -122,6 +127,7 @@ namespace NRKernal
 
             public float avrFramePresentCount = 0;
             public float avgExtraFrameCount = 0;
+            public uint sumTearedFrameCount = 0;
             public uint sumEarlyFrameCount = 0;
             public uint sumDroppedFrameCount = 0;
             public ulong avgSdkFrameLatency = 0;
@@ -135,6 +141,7 @@ namespace NRKernal
 
             public float avrFramePresentCountAll = 0;
             public float avgExtraFrameCountAll = 0;
+            public uint sumTearedFrameCountAll = 0;
             public uint sumEarlyFrameCountAll = 0;
             public uint sumDroppedFrameCountAll = 0;
             public ulong avgSdkFrameLatencyAll = 0;
@@ -151,7 +158,7 @@ namespace NRKernal
             /// <summary> Feed one frame stats. </summary>
             /// <param name="frameStats">        The frame stats.</param>
             /// <returns> Is the metrics duration full. </returns>
-            internal bool FeedFrameStats(FrameStats frameStats, bool enableLog)
+            internal bool FeedFrameStats(FrameStats frameStats, bool enableLog, bool enableTearCollecting)
             {
                 var curTime = Time.realtimeSinceStartup;
                 if (frameStats.isFinish && frameStats.presentTime > frameStats.updateTime && frameStats.presentTime > frameStats.l_preRenderTime && frameStats.presentTime > frameStats.r_postRenderTime)
@@ -177,9 +184,15 @@ namespace NRKernal
                     m_ExtraFrameCountSumAll += frameStats.extraFrameCount;
 
         #if !UNITY_EDITOR
-                    if (curTime - m_NativeTimeStamp > 0.5f)
+                    if (curTime - m_NativeTimeStamp > 1.0f)
                     {
                         m_NativeTimeStamp = curTime;
+
+                        uint tearedFrameCount = 0;
+                        if (enableTearCollecting)
+                            tearedFrameCount = m_NativeMetrics.GetTearedFrameCount();
+                        m_TearedFrameCountSum += tearedFrameCount;
+                        m_TearedFrameCountSumAll += tearedFrameCount;
 
                         var earlyFrameCount = m_NativeMetrics.GetEarlyFrameCount();
                         m_EarlyFrameCountSum += earlyFrameCount;
@@ -217,9 +230,9 @@ namespace NRKernal
             override public string ToString()
             {
                 var duration = Time.realtimeSinceStartup - m_BegTime;
-                return string.Format("FrameMetrics: FPS={0}, frNum={1}, UpdPrd={2}, prd={3}, postPrd={4}, sdkPrd={5}, FPC={6}, EFC={7}, early={8}, drop={9}, presentFPS={19}\n frNumA={10}, UpdPrdA={11}, prdA={12}, postPrdA={13}, sdkPrdA={14}, FPCA={15}, EFCA={16}, earlyA={17}, dropA={18}",
+                return string.Format("FrameMetrics: FPS={0}, frNum={1}, UpdPrd={2}, prd={3}, postPrd={4}, sdkPrd={5}, FPC={6}, EFC={7}, tear={20}, early={8}, drop={9}, presentFPS={19}\n frNumA={10}, UpdPrdA={11}, prdA={12}, postPrdA={13}, sdkPrdA={14}, FPCA={15}, EFCA={16}, tearA={21},  earlyA={17}, dropA={18}",
                     (int)(m_FrameNum/duration), m_FrameNum, avgUpdateToPresentT, avgPreToPresentT, avgPostToPresentT, avgSdkFrameLatency, avrFramePresentCount, avgExtraFrameCount, sumEarlyFrameCount, sumDroppedFrameCount,
-                    m_FrameNumAll, avgUpdateToPresentTAll, avgPreToPresentTAll, avgPostToPresentTAll, avgSdkFrameLatencyAll, avrFramePresentCountAll, avgExtraFrameCountAll, sumEarlyFrameCountAll, sumDroppedFrameCountAll, presentFPS);
+                    m_FrameNumAll, avgUpdateToPresentTAll, avgPreToPresentTAll, avgPostToPresentTAll, avgSdkFrameLatencyAll, avrFramePresentCountAll, avgExtraFrameCountAll, sumEarlyFrameCountAll, sumDroppedFrameCountAll, presentFPS, sumTearedFrameCount, sumTearedFrameCountAll);
             }
 
             private void SaveDurationMetrics()
@@ -234,11 +247,14 @@ namespace NRKernal
 
                 avrFramePresentCount = (float)m_FramePresentCountSum / m_FrameNum;
                 avgExtraFrameCount = (float)m_ExtraFrameCountSum / m_FrameNum;
+                sumTearedFrameCount = m_TearedFrameCountSum; 
                 sumEarlyFrameCount = m_EarlyFrameCountSum;
                 sumDroppedFrameCount = m_DroppedFrameCountSum;
                 avgSdkFrameLatency = m_SdkFrameLatencySum / m_FrameNum;
+#if !UNITY_EDITOR
                 presentFPS = m_NativeMetrics.GetPresentFps();
-            
+#endif
+                
                 // average or summary statistics all the time
                 avgUpdateToPresentTAll = m_UpdateToPresentSumAll / m_FrameNumAll;
                 avgPreToPresentTAll = m_PreToPresentSumAll / m_FrameNumAll;
@@ -246,6 +262,7 @@ namespace NRKernal
 
                 avrFramePresentCountAll = (float)m_FramePresentCountSumAll / m_FrameNumAll;
                 avgExtraFrameCountAll = (float)m_ExtraFrameCountSumAll / m_FrameNumAll;
+                sumTearedFrameCountAll = m_TearedFrameCountSumAll;
                 sumEarlyFrameCountAll = m_EarlyFrameCountSumAll;
                 sumDroppedFrameCountAll = m_DroppedFrameCountSumAll;
                 avgSdkFrameLatencyAll = m_SdkFrameLatencySumAll / m_FrameNumAll;
@@ -263,6 +280,7 @@ namespace NRKernal
 
                 m_FramePresentCountSum = 0;
                 m_ExtraFrameCountSum = 0;
+                m_TearedFrameCountSum = 0;
                 m_EarlyFrameCountSum = 0;
                 m_DroppedFrameCountSum = 0;
                 m_SdkFrameLatencySum = 0;
@@ -275,6 +293,7 @@ namespace NRKernal
 
                     m_FramePresentCountSumAll = 0;
                     m_ExtraFrameCountSumAll = 0;
+                    m_TearedFrameCountSumAll = 0;
                     m_EarlyFrameCountSumAll = 0;
                     m_DroppedFrameCountSumAll = 0;
                     m_SdkFrameLatencySumAll = 0;
@@ -285,6 +304,14 @@ namespace NRKernal
 
         [SerializeField]
         bool m_EnableLog = true;
+
+        [SerializeField, Tooltip("Be careful to enable this feature as it needs extra cpu or gpu cost.")]
+        public bool enableTearCollecting = false;
+        bool m_TearCollectingEnabled = false;
+        
+        [SerializeField, Tooltip("Be careful to enable this feature as it needs extra cpu or gpu cost.")]
+        public bool enableDebugRenderBackColor = false;
+        bool m_DebugRenderBackColorEnabled = false;
 
         private Dictionary<int, FrameStats> m_DicFrameStats = new Dictionary<int, FrameStats>();
         private List<FrameStats> m_CacheFrameStats = new List<FrameStats>();
@@ -306,10 +333,15 @@ namespace NRKernal
         private const int k_EndOfFrameEvent = 0x0001;
         private const int k_BaseFactor = 1000000000;
 
+        new void Awake()
+        {
+            base.Awake();
+            NRSessionManager.Instance.NRMetrics = this;
+        }
+        
         private void Start()
         {
             NRDebugger.Info("[NRMetrics] Start");
-
 #if !UNITY_EDITOR
             m_NativeMetrics = new NativeMetrics();
 
@@ -317,8 +349,8 @@ namespace NRKernal
             m_NativeMetrics.Create(NativeXRPlugin.GetMetricsHandle());
 #else
             m_NativeMetrics.Create();
-            m_NativeMetrics.Start();
 #endif
+            m_NativeMetrics.Start();
 
 #endif
 
@@ -479,9 +511,27 @@ namespace NRKernal
                 {
                     if (NRFrame.SessionStatus == SessionState.Running)
                     {
-                        frameStats.FeedNativeMetricsStats(m_NativeMetrics);
+                        if (enableTearCollecting != m_TearCollectingEnabled)
+                        {
+                            NRDebugger.Info("[NRMetrics] enableTearCollecting: {0}", enableTearCollecting);
+                            m_TearCollectingEnabled = enableTearCollecting;
+#if !UNITY_EDITOR
+                            m_NativeMetrics.EnableFeature(NRMetricsFeature.NR_METRICS_FEATURE_EXTENDED_TEARING_COUNT, m_TearCollectingEnabled);
+#endif
+                        }
+                        
+                        if (enableDebugRenderBackColor != m_DebugRenderBackColorEnabled)
+                        {
+                            NRDebugger.Info("[NRMetrics] enableDebugRenderBackColor: {0}", enableDebugRenderBackColor);
+                            m_DebugRenderBackColorEnabled = enableDebugRenderBackColor;
+#if !UNITY_EDITOR
+                            m_NativeMetrics.EnableFeature(NRMetricsFeature.NR_METRICS_FEATURE_EXTENDED_RENDER_BACK_COLOR, m_DebugRenderBackColorEnabled);
+#endif
+                        }
+                        
+                        frameStats.FeedNativeMetricsStats(m_NativeMetrics, m_TearCollectingEnabled);
                         // NRDebugger.Info(frameStats.ToString());
-                        m_FrameMetrics?.FeedFrameStats(frameStats, m_EnableLog);
+                        m_FrameMetrics?.FeedFrameStats(frameStats, m_EnableLog, m_TearCollectingEnabled);
                     }
 
                     // recycle frameStats
@@ -594,6 +644,16 @@ namespace NRKernal
         public void ResetMetrics()
         {
             m_FrameMetrics?.Reset();
+        }
+        
+        public void SwitchMetricsTearCollect()
+        {
+            enableTearCollecting = !enableTearCollecting;
+        }
+
+        public void SwitchMetricsDebugRenderBackColor()
+        {
+            enableDebugRenderBackColor = !enableDebugRenderBackColor;
         }
     }
 }

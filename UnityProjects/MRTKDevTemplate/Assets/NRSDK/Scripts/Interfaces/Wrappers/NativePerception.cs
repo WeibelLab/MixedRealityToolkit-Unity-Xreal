@@ -57,18 +57,18 @@ namespace NRKernal
         }
 
         /// <summary> Switch tracking type. </summary>
-        public bool SwitchTrackingType(TrackingType type)
+        public bool SwitchTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
 #if USING_XR_SDK
-            NRDebugger.Info("[NativePerception] Begin SwitchTrackingType XR: {0}", type);
-            NativeXRPlugin.SwitchTrackingType(type);
+            NRDebugger.Info("[NativePerception] Begin SwitchTrackingType XR: {0}", descriptor.id);
+            NativeXRPlugin.SwitchTrackingType(descriptor.id);
             m_PerceptionHandle = NativeXRPlugin.GetPerceptionHandle();
             m_NativeInterface.PerceptionHandle = m_PerceptionHandle;
             m_NativeInterface.PerceptionId = NativeXRPlugin.GetPerceptionID();
-            NRDebugger.Info($"[NativePerception] End SwitchTrackingType XR: {type} handle={m_PerceptionHandle}");
+            NRDebugger.Info($"[NativePerception] End SwitchTrackingType XR: {descriptor.id} handle={m_PerceptionHandle}");
             return m_PerceptionHandle != 0;
 #else
-            NRDebugger.Info("[NativePerception] Begin SwitchTrackingType: {0}", type);
+            NRDebugger.Info("[NativePerception] Begin SwitchTrackingType: {0}", descriptor.id);
             int group_count = 0;
             NativeResult result = NativeApi.NRPerceptionGroupGetCount(m_PerceptionGroupHandle, ref group_count);
             NativeErrorListener.Check(result, this, "GroupGetCount");
@@ -77,12 +77,12 @@ namespace NRKernal
             UInt64 perceptionHandle = 0;
             for (int i = 0; i < group_count; i++)
             {
-                if (NativeApi.NRPerceptionGroupCheckPerceptionType(m_PerceptionGroupHandle, i, type))
+                if (CheckPerceptionType(i, descriptor))
                 {
                     result = NativeApi.NRPerceptionGroupGetPerceptionId(m_PerceptionGroupHandle, i, ref perception_id);
                     NativeErrorListener.Check(result, this, "GetPerceptionId");
                     result = NativeApi.NRPerceptionCreate(perception_id, ref perceptionHandle);
-                    NRDebugger.Info("[NativePerception] NRPerceptionCreate:{0} TrackingType:{1}", perceptionHandle, type);
+                    NRDebugger.Info("[NativePerception] NRPerceptionCreate:{0} TrackingType:{1}", perceptionHandle, descriptor.id);
                     NativeErrorListener.Check(result, this, "Create");
                     if (perceptionHandle == 0)
                         break;
@@ -94,12 +94,22 @@ namespace NRKernal
                     m_PerceptionHandle = perceptionHandle;
                     m_NativeInterface.PerceptionHandle = m_PerceptionHandle;
                     m_NativeInterface.PerceptionId = perception_id;
-                    NRDebugger.Info($"[NativePerception] End SwitchTrackingType: {type} perceptionHandle={perceptionHandle}");
+                    NRDebugger.Info($"[NativePerception] End SwitchTrackingType: {descriptor.id} perceptionHandle={perceptionHandle}");
                     return result == NativeResult.Success;
                 }
             }
             return false;
 #endif
+        }
+
+        private bool CheckPerceptionType(int index, IntegratedSubsystemDescriptor descriptor)
+        {
+            IntPtr ptr = IntPtr.Zero;
+            int length = 0;
+            NativeResult result = NativeApi.NRPerceptionGroupGetDescription(m_PerceptionGroupHandle, index, ref ptr, ref length);
+            NativeErrorListener.Check(result, this, "GroupGetDescription");
+            string str = Marshal.PtrToStringAnsi(ptr, length);
+            return str == descriptor.id;
         }
 
         /// <summary> Starts this object. </summary>
@@ -124,6 +134,7 @@ namespace NRKernal
             {
                 return false;
             }
+            NRDebugger.Info($"[NativePerception] Pause: {m_PerceptionHandle}");
             NativeResult result = NativeApi.NRPerceptionPause(m_PerceptionHandle);
             NativeErrorListener.Check(result, this, "Pause");
             return result == NativeResult.Success;
@@ -137,6 +148,7 @@ namespace NRKernal
             {
                 return false;
             }
+            NRDebugger.Info($"[NativePerception] Resume: {m_PerceptionHandle}");
             NativeResult result = NativeApi.NRPerceptionResume(m_PerceptionHandle);
             NativeErrorListener.Check(result, this, "Resume");
             return result == NativeResult.Success;
@@ -150,6 +162,7 @@ namespace NRKernal
             {
                 return false;
             }
+            NRDebugger.Info($"[NativePerception] Stop: {m_PerceptionHandle}");
             NativeResult result = NativeApi.NRPerceptionStop(m_PerceptionHandle);
             NativeErrorListener.Check(result, this, "Stop");
             return result == NativeResult.Success;
@@ -163,6 +176,7 @@ namespace NRKernal
             {
                 return false;
             }
+            NRDebugger.Info($"[NativePerception] Destroy: {m_PerceptionHandle}");
             NativeResult result = NativeApi.NRPerceptionDestroy(m_PerceptionHandle);
             NativeErrorListener.Check(result, this, "Destroy");
             m_PerceptionHandle = 0;

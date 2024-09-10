@@ -9,6 +9,7 @@
 
 namespace NRKernal
 {
+    using System;
     using UnityEngine;
 
 #if UNITY_EDITOR
@@ -77,12 +78,12 @@ namespace NRKernal
             return true;
         }
 
-        public bool InitTrackingType(TrackingType type)
+        public bool InitTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
             return true;
         }
 
-        public bool SwitchTrackingType(TrackingType type)
+        public bool SwitchTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
             return true;
         }
@@ -98,6 +99,10 @@ namespace NRKernal
         public ulong GetHMDTimeNanos()
         {
             return 0;
+        }
+
+        public void RegistInputSubSystemEventCallback(Action<bool> callback)
+        {
         }
     }
 #endif

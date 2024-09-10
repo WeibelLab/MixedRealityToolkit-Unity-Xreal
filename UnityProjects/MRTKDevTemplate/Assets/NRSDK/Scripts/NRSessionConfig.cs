@@ -11,7 +11,7 @@ namespace NRKernal
 {
     using UnityEngine;
     using UnityEngine.Serialization;
-	using System.Collections.Generic;
+    using System.Collections.Generic;
 
     /// <summary> A configuration used to track the world. </summary>
     [CreateAssetMenu(fileName = "NRKernalSessionConfig", menuName = "NRSDK/SessionConfig", order = 1)]
@@ -35,11 +35,11 @@ namespace NRKernal
         /// <summary> Chooses whether notification will be used. </summary>
         [Tooltip("Chooses whether notification will be used.")]
         public bool EnableNotification = false;
-        
+
         /// <summary> Chooses whether to kill process while receive OnGlassesDisconnectEvent for NOTIFY_TO_QUIT_APP reason. </summary>
         [Tooltip("Chooses whether to force kill while receive OnGlassesDisconnectEvent for NOTIFY_TO_QUIT_APP reason.")]
         public bool ForceKillWhileGlassesSwitchMode = true;
-        
+
 #if ENABLE_MONO_MODE
         /// <summary> Chooses  whether to support to run in mono mode.")]. </summary>
         [Tooltip("Chooses whether to support to run in mono mode.")]
@@ -61,7 +61,7 @@ namespace NRKernal
         /// <summary> It will be read automatically from PlayerdSetting. </summary>
         [Tooltip("It will be read automatically from PlayerdSetting.")]
         public bool UseMultiThread = false;
-        
+
         /// <summary> The NRProjectConfig whick is global unique. All NRSessionConfig in project should refer to the same NRProjectConfig. </summary>
         [SerializeField]
         [Tooltip("Donot change this manually, it always refer to the NRProjectConfig whick is global unique.")]
@@ -120,17 +120,17 @@ namespace NRKernal
         /// <param name="other"> .</param>
         public void CopyFrom(NRSessionConfig other)
         {
-            PlaneFindingMode                = other.PlaneFindingMode;
-            ImageTrackingMode               = other.ImageTrackingMode;
-            TrackingImageDatabase           = other.TrackingImageDatabase;
-            GlassesErrorTipPrefab           = other.GlassesErrorTipPrefab;
-            TrackingModeChangeTipPrefab     = other.TrackingModeChangeTipPrefab;
-            EnableNotification              = other.EnableNotification;
+            PlaneFindingMode = other.PlaneFindingMode;
+            ImageTrackingMode = other.ImageTrackingMode;
+            TrackingImageDatabase = other.TrackingImageDatabase;
+            GlassesErrorTipPrefab = other.GlassesErrorTipPrefab;
+            TrackingModeChangeTipPrefab = other.TrackingModeChangeTipPrefab;
+            EnableNotification = other.EnableNotification;
             ForceKillWhileGlassesSwitchMode = other.ForceKillWhileGlassesSwitchMode;
 #if ENABLE_MONO_MODE
-            SupportMonoMode                 = other.SupportMonoMode;
+            SupportMonoMode = other.SupportMonoMode;
 #endif
-            ProjectConfig                   = other.ProjectConfig;
+            ProjectConfig = other.ProjectConfig;
         }
 
         public bool IsTargetDevice(NRDeviceCategory device)
@@ -142,7 +142,12 @@ namespace NRKernal
         {
             return ProjectConfig ? ProjectConfig.GetTargetDeviceTypesDesc() : string.Empty;
         }
-        
+
+        public TextAsset GetLicenseAsset()
+        {
+            return ProjectConfig ? ProjectConfig.licenseAsset : null;
+        }
+
 #if UNITY_EDITOR
         public void SetProjectConfig(NRProjectConfig projectConfig)
         {

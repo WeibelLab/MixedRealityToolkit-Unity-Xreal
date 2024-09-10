@@ -26,6 +26,8 @@ namespace NRKernal
         SDKInited,
         /// <summary> An enum constant representing the glasses is started just now. </summary>
         GlassesStarted,
+
+        HMDStarted,
         /// <summary> An enum constant representing the glasses is going to be paused after this event. </summary>
         GlassesPrePause,
         /// <summary> An enum constant representing the session is resumed just now. </summary>
@@ -65,7 +67,7 @@ namespace NRKernal
                 return m_Subsystem;
             }
         }
-        
+
 #if USING_XR_SDK
         public static UnityEngine.XR.XRDisplaySubsystem XRDisplaySubsystem
         {
@@ -80,7 +82,7 @@ namespace NRKernal
             get { return m_UnityActivity; }
         }
 
-    
+
         private bool m_MonoMode = false;
         /// <summary> If sdk is running in mono mode. </summary>
         /// <value> If sdk is running in mono mode. </value>
@@ -121,6 +123,12 @@ namespace NRKernal
             NativeAPI.Create();
 #endif
             OnSessionSpecialEvent?.Invoke(SessionSpecialEventType.SDKCreated);
+
+#if !UNITY_EDITOR
+            var licenseData = NRSessionManager.Instance.GetNRSDKLicenseData();
+            NativeAPI.InitSetLicenseData(licenseData);
+#endif
+
 #if !UNITY_EDITOR
             NativeAPI.Start();
             version = NativeAPI.GetVersion();
@@ -191,7 +199,7 @@ namespace NRKernal
             // Some app contains 2D content and 3D content. It may wish to keep process alive after glasses switch mode.
             if (reason == GlassesDisconnectReason.NOTIFY_TO_QUIT_APP && !NRSessionManager.Instance.NRSessionBehaviour.SessionConfig.ForceKillWhileGlassesSwitchMode)
                 forceKill = false;
-            
+
             // Do ForceKill immediately for background mrapp, as the main thread is not running. 
             if (!Subsystem.running)
             {

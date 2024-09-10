@@ -101,6 +101,8 @@ namespace NRKernal
             {
                 return;
             }
+
+            NRDebugger.Info($"[NativeController] Pause");
             for (int i = 0; i < m_ControllerHandle.Length; i++)
             {
                 NativeResult result = NativeApi.NRControllerPause(m_ControllerHandle[i]);
@@ -115,6 +117,8 @@ namespace NRKernal
             {
                 return;
             }
+
+            NRDebugger.Info($"[NativeController] Resume");
             for (int i = 0; i < m_ControllerHandle.Length; i++)
             {
                 NativeResult result = NativeApi.NRControllerResume(m_ControllerHandle[i]);
@@ -129,6 +133,8 @@ namespace NRKernal
             {
                 return;
             }
+
+            NRDebugger.Info($"[NativeController] Stop");
             for (int i = 0; i < m_ControllerHandle.Length; i++)
             {
                 NativeResult result = NativeApi.NRControllerStop(m_ControllerHandle[i]);
@@ -143,6 +149,8 @@ namespace NRKernal
             {
                 return;
             }
+
+            NRDebugger.Info($"[NativeController] Destroy");
             NativeResult result = NativeApi.NRControllerGroupDestroy(m_ControllerGroupHandle);
             NativeErrorListener.Check(result, this, "GroupDestroy", true);
             m_ControllerGroupHandle = 0;

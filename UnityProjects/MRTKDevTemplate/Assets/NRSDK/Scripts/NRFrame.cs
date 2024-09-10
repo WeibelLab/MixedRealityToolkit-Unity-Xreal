@@ -259,6 +259,7 @@ namespace NRKernal
             GetNodePoseData(m_NodeStates, XRNode.Head, out pose);
 
             lostTrackReason = NativeXRPlugin.GetLostTrackingReason();
+            isHeadPoseReady = NRSessionManager.Instance.IsRunning && NativeXRPlugin.GetIsHeadHeadPoseReady();
             var timeStamp = NativeXRPlugin.GetFramePresentTime();
 
             if (NRDebugger.logLevel <= LogLevel.Debug)

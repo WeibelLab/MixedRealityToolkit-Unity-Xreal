@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+﻿/*****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -15,7 +15,7 @@ namespace NRKernal
     using UnityEngine.EventSystems;
     using UnityEngine.UI;
 
-    
+
     /// <summary> Interface for canvas raycast target. </summary>
     public interface ICanvasRaycastTarget
     {
@@ -31,7 +31,7 @@ namespace NRKernal
 
         void GraphicRaycast(bool ignoreReversedGraphics, Ray ray, float distance, Vector3 screenCenterPoint, NRPointerRaycaster raycaster, List<RaycastResult> raycastResults);
     }
-    
+
 
     /// <summary>
     /// The class enables an UGUI Canvas and its children to be interactive with NRInput raycasters. </summary>
@@ -76,9 +76,11 @@ namespace NRKernal
                 var graphic = graphics[i];
                 // -1 means it hasn't been processed by the canvas, which means it isn't actually drawn
                 if (graphic.depth == -1 || !graphic.raycastTarget) { continue; }
-
+#if UNITY_2021_3_OR_NEWER
+                if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, screenCenterPoint, eventCamera, graphic.raycastPadding)) { continue; }
+#else
                 if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, screenCenterPoint, eventCamera)) { continue; }
-
+#endif
                 if (ignoreReversedGraphics && Vector3.Dot(ray.direction, graphic.transform.forward) <= 0f) { continue; }
 
                 if (!graphic.Raycast(screenCenterPoint, eventCamera)) { continue; }

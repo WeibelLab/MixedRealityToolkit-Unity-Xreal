@@ -85,6 +85,7 @@ namespace NRKernal
         private static bool m_IsDestroyed = false;
         private void OnDestroy()
         {
+            NRDebugger.Info($"[NRKernalUpdater] OnDestroy");
             m_Instance = null;
             m_IsDestroyed = true;
         }

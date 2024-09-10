@@ -56,4 +56,8 @@ namespace NRKernal
 
         void Destroy();
     }
+
+    public interface ITrackingSubsystemDescriptor : ISubsystemDescriptor
+    {
+    }
 }

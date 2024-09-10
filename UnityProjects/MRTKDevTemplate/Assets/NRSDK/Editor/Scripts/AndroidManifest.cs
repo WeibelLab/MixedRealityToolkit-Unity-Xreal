@@ -188,6 +188,13 @@ namespace NRKernal
                 XmlAttribute newAttribute = CreateAndroidAttribute("name", "android.permission.RECORD_AUDIO");
                 child.Attributes.Append(newAttribute);
             }
+            if (!manifest.InnerXml.Contains("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"))
+            {
+                XmlElement child = CreateElement("uses-permission");
+                manifest.AppendChild(child);
+                XmlAttribute newAttribute = CreateAndroidAttribute("name", "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION");
+                child.Attributes.Append(newAttribute);
+            }
         }
 
         /// <summary> Sets sdk meta data. </summary>

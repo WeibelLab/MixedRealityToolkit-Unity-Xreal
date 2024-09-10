@@ -238,12 +238,23 @@ namespace NRKernal
                 return;
             }
 
+            float timeBeforeSubmit = 0;
             if (NRDebugger.logLevel <= LogLevel.Debug)
-                NRDebugger.Info("SubmitFrame: frameHandle={0}, curPresentTime={1}", frameHandle, NRFrame.CurrentPoseTimeStamp);
+            {
+                timeBeforeSubmit = Time.realtimeSinceStartup;
+                NRDebugger.Info("[NativeSwapchain] SubmitFrame: frameHandle={0}, curPresentTime={1}", frameHandle,
+                    NRFrame.CurrentPoseTimeStamp);
+            }
+
             var result = NativeApi.NRFrameSubmit(RenderHandler, frameHandle);
             UInt64 displayTime = 0, displayPrd = 0;
             NativeApi.NRRenderingWaitFrame(RenderHandler, ref displayTime, ref displayPrd);
-            //NRDebugger.Info("SubmitFrame after wait: {0}", NRFrame.CurrentPoseTimeStamp);
+            if (NRDebugger.logLevel <= LogLevel.Debug)
+            {
+                var curTime = Time.realtimeSinceStartup;
+                NRDebugger.Info("[NativeSwapchain] SubmitFrame after wait: {0}ms, {1}", (curTime - timeBeforeSubmit)*1000, NRFrame.CurrentPoseTimeStamp);
+            }
+
             NativeErrorListener.Check(result, this, "SubmitFrame");
         }
 

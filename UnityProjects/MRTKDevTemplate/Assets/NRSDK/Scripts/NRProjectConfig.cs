@@ -24,6 +24,8 @@ namespace NRKernal
         /// <summary> whether to support to run in multi-resume mode. </summary>
         public bool supportMultiResume = true;
 
+        public TextAsset licenseAsset = null;
+
         public string GetTargetDeviceTypesDesc()
         {
             string devices = string.Empty;

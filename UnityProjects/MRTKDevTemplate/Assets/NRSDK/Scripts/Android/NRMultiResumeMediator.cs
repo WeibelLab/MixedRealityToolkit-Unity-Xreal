@@ -12,6 +12,29 @@ namespace NRKernal
     using System;
     using UnityEngine;
 
+    public class XRDisplayListener : IXRDisplayListener
+    {
+        public delegate void onXRDisplayAddedCB(int i, int width, int height);
+        public delegate void onXRDisplayRemovedCB(int i);
+
+        private onXRDisplayAddedCB onDisplayAdded;
+        private onXRDisplayRemovedCB onDisplayRemoved;
+        public XRDisplayListener(onXRDisplayAddedCB onAdded, onXRDisplayRemovedCB onRemoved)
+        {
+            onDisplayAdded = onAdded;
+            onDisplayRemoved = onRemoved;
+        }
+
+        public void onXRDisplayAdded(int i, int width, int height)
+        {
+            onDisplayAdded?.Invoke(i, width, height);
+        }
+
+        public void onXRDisplayRemoved(int i)
+        {
+            onDisplayRemoved?.Invoke(i);
+        }
+    }
 
     /// <summary>
     /// The singleton mediator of native. It is used to accept message from native. </summary>
@@ -26,6 +49,7 @@ namespace NRKernal
         public static event Action FloatingWindowClicked;
 
         private static AndroidJavaClass mMultiResumeNativeInstance;
+        private static XRDisplayProxy mXRDisplayProxy = null;
 
         static AndroidJavaClass nativeInstance
         {
@@ -63,8 +87,14 @@ namespace NRKernal
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void ListenFloatingManager()
         {
-            var cls = new AndroidJavaClass("ai.nreal.activitylife.FloatingManager");
-            cls.CallStatic("setNRXRAppCallback", new FloatingManagerListener());
+            try
+            {
+                var cls = new AndroidJavaClass("ai.nreal.activitylife.FloatingManager");
+                cls.CallStatic("setNRXRAppCallback", new FloatingManagerListener());
+            }
+            catch (Exception e)
+            {
+            }
         }
 #endif
 
@@ -90,6 +120,22 @@ namespace NRKernal
             catch (Exception e)
             {
                 NRDebugger.Error("BroadcastDisplayMode: {0}", e.Message);
+            }
+        }
+        /// <summary> Broadcast if it support to dynamic switch dp without process quit. </summary>
+        /// <param name="dynamicSwitchSDK">   dynamic swith sdk.</param>
+        public static void BroadcastDynamicSwitchDP()
+        {
+            if (!NRSessionManager.Instance.NRSessionBehaviour.SessionConfig.SupportMultiResume)
+                return;
+
+            try
+            {
+                nativeInstance.CallStatic("broadcastDynamicSwitchDP");
+            }
+            catch (Exception e)
+            {
+                NRDebugger.Error("BroadcastDynamicSwitchDP: {0}", e.Message);
             }
         }
 
@@ -124,6 +170,52 @@ namespace NRKernal
         public static AndroidJavaObject GetFakeActivity()
         {
             return nativeInstance.CallStatic<AndroidJavaObject>("getFakeActivity");
+        }
+
+        public static int GetXrealGlassesDisplayId()
+        {
+            return nativeInstance.CallStatic<int>("getNrealGlassesDisplayId");
+        }
+
+        
+        /// <summary> Prepare for switching display dynamically. </summary>
+        public static void PrepareDynamicSwitchDP()
+        {
+            if (!NRSessionManager.Instance.NRSessionBehaviour.SessionConfig.SupportMultiResume)
+                return;
+
+            try
+            {
+                nativeInstance.CallStatic("prepareDynamicSwitchDP");
+            }
+            catch (Exception e)
+            {
+                NRDebugger.Error("prepareDynamicSwitchDP: {0}", e.Message);
+            }
+        }
+        
+        /// <summary> Is it ready for switching display dynamically. </summary>
+        public static bool ReadyForDynamicSwitchDP()
+        {
+            return nativeInstance.CallStatic<bool>("readyForDynamicSwitchDP");
+        }
+        
+        /// <summary> Is it ready for restarting session. </summary>
+        public static bool ReadyForRestartSession()
+        {
+            return nativeInstance.CallStatic<bool>("readyForRestartSession");
+        }
+
+        public static void AddXRDisplayListener(IXRDisplayListener listener)
+        {
+            if (mXRDisplayProxy == null)
+                mXRDisplayProxy = new XRDisplayProxy(nativeInstance);
+            mXRDisplayProxy.AddListener(listener);
+        }
+        
+        public static void RemoveXRDisplayListener(IXRDisplayListener listener)
+        {
+            mXRDisplayProxy?.RemoveListener(listener);
         }
     }
 }

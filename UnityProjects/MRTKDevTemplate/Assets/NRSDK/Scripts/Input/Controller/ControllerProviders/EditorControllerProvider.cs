@@ -58,16 +58,16 @@ namespace NRKernal
             UpdateControllerState(0);
         }
 
-        public override void Recenter()
+        public override void Recenter(int index)
         {
-            base.Recenter();
+            base.Recenter(index);
             needRecenter = true;
         }
 
-        /// <summary> Destroy the controller. </summary>
-        public override void Destroy()
+        /// <summary> Stop the controller. </summary>
+        public override void Stop()
         {
-            base.Destroy();
+            base.Stop();
         }
 
         /// <summary> Updates the controller state described by index. </summary>

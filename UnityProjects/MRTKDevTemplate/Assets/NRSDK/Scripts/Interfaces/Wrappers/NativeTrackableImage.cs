@@ -32,6 +32,9 @@ namespace NRKernal
         public UInt64 CreateDataBase()
         {
             UInt64 database_handle = 0;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return database_handle;
+
             var result = NativeApi.NRTrackableImageDatabaseCreate(m_NativeInterface.PerceptionHandle, ref database_handle);
             NativeErrorListener.Check(result, this, "CreateDataBase");
             return database_handle;
@@ -42,6 +45,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool DestroyDataBase(UInt64 database_handle)
         {
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return false;
+            
             var result = NativeApi.NRTrackableImageDatabaseDestroy(m_NativeInterface.PerceptionHandle, database_handle);
             NativeErrorListener.Check(result, this, "DestroyDataBase");
             return result == NativeResult.Success;
@@ -53,6 +59,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool LoadDataBase(UInt64 database_handle, string path)
         {
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return false;
+
             var result = NativeApi.NRTrackableImageDatabaseLoadDirectory(m_NativeInterface.PerceptionHandle, database_handle, path);
             return result == NativeResult.Success;
         }
@@ -63,6 +72,9 @@ namespace NRKernal
         public Pose GetCenterPose(UInt64 trackable_handle)
         {
             Pose pose = Pose.identity;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return pose;
+
             NativeMat4f center_pose_native = NativeMat4f.identity;
             NativeApi.NRTrackableImageGetCenterPose(m_NativeInterface.PerceptionHandle, trackable_handle, ref center_pose_native);
 
@@ -77,6 +89,9 @@ namespace NRKernal
         {
             float extent_x, extent_z;
             extent_x = extent_z = 0;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return new Vector2(extent_x, extent_z);
+
             NativeApi.NRTrackableImageGetExtentX(m_NativeInterface.PerceptionHandle, trackable_handle, ref extent_x);
             NativeApi.NRTrackableImageGetExtentZ(m_NativeInterface.PerceptionHandle, trackable_handle, ref extent_z);
             return new Vector2(extent_x * 0.001f, extent_z * 0.001f);

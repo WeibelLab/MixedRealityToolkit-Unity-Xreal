@@ -18,7 +18,7 @@ namespace NRKernal
 
     /// <summary> A tracking image database inspector. </summary>
     [CustomEditor(typeof(NRTrackingImageDatabase))]
-    public class TrackingImageDatabaseInspector : Editor
+    public class TrackingImageDatabaseInspector : UnityEditor.Editor
     {
         /// <summary> Height of the image spacer. </summary>
         private const float m_ImageSpacerHeight = 55f;

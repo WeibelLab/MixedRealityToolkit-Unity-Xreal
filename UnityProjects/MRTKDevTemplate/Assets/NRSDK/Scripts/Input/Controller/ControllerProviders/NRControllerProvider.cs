@@ -22,7 +22,7 @@ namespace NRKernal
         /// <summary> The processed frame. </summary>
         private int m_ProcessedFrame;
         /// <summary> True to need recenter. </summary>
-        private bool m_NeedRecenter;
+        private bool[] m_NeedRecenter;
         /// <summary> Array of home pressing timers. </summary>
         private float[] homePressingTimerArr = new float[NRInput.MAX_CONTROLLER_STATE_COUNT];
 
@@ -85,7 +85,7 @@ namespace NRKernal
             {
                 m_NativeController.Start();
             }
-
+            m_NeedRecenter = new bool[ControllerCount];
 #if !UNITY_EDITOR
             NRDebugger.Info("[NRInput] version:" + GetVersion(0));
 #endif
@@ -129,10 +129,10 @@ namespace NRKernal
             }
         }
 
-        /// <summary> Destroy the controller. </summary>
-        public override void Destroy()
+        /// <summary> Stop the controller. </summary>
+        public override void Stop()
         {
-            base.Destroy();
+            base.Stop();
 
             if (m_NativeController != null)
             {
@@ -170,7 +170,21 @@ namespace NRKernal
         public override void Recenter()
         {
             base.Recenter();
-            m_NeedRecenter = true;
+            if(m_NeedRecenter != null)
+            {
+                for (int i = 0; i < m_NeedRecenter.Length; i++)
+                {
+                    m_NeedRecenter[i] = true;
+                }
+            }
+            
+        }
+
+        public override void Recenter(int index)
+        {
+            base.Recenter(index);
+            if (m_NeedRecenter != null && index < ControllerCount)
+                m_NeedRecenter[index] = true;
         }
 
         /// <summary> Updates the controller state described by index. </summary>
@@ -179,6 +193,11 @@ namespace NRKernal
         {
             m_NativeController.UpdateState(index);
             var hmdTime = NRSessionManager.Instance.TrackingSubSystem.GetHMDTimeNanos();
+            if(hmdTime == 0)
+            {
+                NRDebugger.Warning($"[NRControllerProvider] UpdateControllerState GetHMDTimeNanos failed");
+                return;
+            }
             states[index].controllerType = m_NativeController.GetControllerType(index);
 #if UNITY_EDITOR
             if (NRInput.EmulateVirtualDisplayInEditor)
@@ -210,14 +229,11 @@ namespace NRKernal
 
             CheckRecenter(index);
 
-            if (m_NeedRecenter)
+            if (m_NeedRecenter[index])
             {
-                for (int i = 0; i < ControllerCount; i++)
-                {
-                    states[i].recentered = true;
-                    m_NativeController.RecenterController(i);
-                }
-                m_NeedRecenter = false;
+                states[index].recentered = true;
+                m_NativeController.RecenterController(index);
+                m_NeedRecenter[index] = false;
             }
         }
 
@@ -231,7 +247,7 @@ namespace NRKernal
                 if (homePressingTimerArr[index] > HOME_LONG_PRESS_TIME)
                 {
                     homePressingTimerArr[index] = float.MinValue;
-                    Recenter();
+                    Recenter(index);
                 }
             }
             else
@@ -239,5 +255,6 @@ namespace NRKernal
                 homePressingTimerArr[index] = 0f;
             }
         }
+
     }
 }

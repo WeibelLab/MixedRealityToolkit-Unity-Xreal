@@ -40,6 +40,9 @@ namespace NRKernal
         /// <returns> The new anchor handle. </returns>
         public UInt64 AddAnchor(Pose pose)
         {
+            if (PerceptionHandle == 0)
+                return 0;
+            
             UInt64 anchorHandle = 0;
             ConversionUtility.UnityPoseToApiPose(pose, out NativeMat4f nativePose);
             var result = NativeApi.NRPerceptionAcquireNewAnchor(PerceptionHandle, ref nativePose, ref anchorHandle);
@@ -53,6 +56,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool SaveAnchor(UInt64 anchor_handle, string path)
         {
+            if (PerceptionHandle == 0)
+                return false;
+            
             var buff = Encoding.UTF8.GetBytes(path);
             NRDebugger.Info("[NativeMapping] NRTrackableAnchorSave: before ");
             var result = NativeApi.NRTrackableAnchorSave(PerceptionHandle, anchor_handle, buff, (uint)buff.Length);
@@ -66,6 +72,9 @@ namespace NRKernal
         /// <returns> The new anchor handle. </returns>
         public UInt64 LoadAnchor(string path)
         {
+            if (PerceptionHandle == 0)
+                return 0;
+            
             UInt64 anchorHandle = 0;
             var buff = Encoding.UTF8.GetBytes(path);
             var result = NativeApi.NRPerceptionLoadAnchor(PerceptionHandle, buff, (uint)buff.Length, ref anchorHandle);
@@ -78,6 +87,9 @@ namespace NRKernal
         /// <returns> The new anchor list handle. </returns>
         public UInt64 CreateAnchorList()
         {
+            if (PerceptionHandle == 0)
+                return 0;
+            
             UInt64 anchorlisthandle = 0;
             var result = NativeApi.NRPerceptionObjectListCreate(PerceptionHandle, ref anchorlisthandle);
             NRDebugger.Debug("[NativeMapping] NRPerceptionObjectListCreate: {0}", result);
@@ -90,6 +102,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool UpdateAnchor(UInt64 anchorlisthandle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+            
             var result = NativeApi.NRPerceptionUpdateTrackables(PerceptionHandle, TrackableType.TRACKABLE_ANCHOR, anchorlisthandle);
             NRDebugger.Debug("[NativeMapping] NRPerceptionUpdateTrackables: {0}", result);
             NativeErrorListener.Check(result, this, "UpdateAnchor");
@@ -101,6 +116,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool DestroyAnchorList(UInt64 anchorlisthandle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+            
             var result = NativeApi.NRPerceptionObjectListDestroy(PerceptionHandle, anchorlisthandle);
             NRDebugger.Debug("[NativeMapping] NRPerceptionObjectListDestroy: {0}", result);
             NativeErrorListener.Check(result, this, "DestroyAnchorList");
@@ -112,6 +130,9 @@ namespace NRKernal
         /// <returns> The anchor list size. </returns>
         public uint GetAnchorListSize(UInt64 perception_object_list_handle)
         {
+            if (PerceptionHandle == 0)
+                return 0;
+            
             uint size = 0;
             var result = NativeApi.NRPerceptionObjectListGetSize(PerceptionHandle, perception_object_list_handle, ref size);
             NRDebugger.Debug("[NativeMapping] NRPerceptionObjectListGetSize: {0} Result: {1}", size, result);
@@ -125,6 +146,9 @@ namespace NRKernal
         /// <returns> An UInt64. </returns>
         public UInt64 AcquireItem(UInt64 perception_object_list_handle, int index)
         {
+            if (PerceptionHandle == 0)
+                return 0;
+            
             UInt64 anchorHandle = 0;
             var result = NativeApi.NRPerceptionObjectListAcquireItem(PerceptionHandle, perception_object_list_handle, index, ref anchorHandle);
             NRDebugger.Debug("[NativeMapping] NRPerceptionObjectListAcquireItem: {0}", result);
@@ -138,6 +162,9 @@ namespace NRKernal
         public TrackingState GetTrackingState(UInt64 anchor_handle)
         {
             TrackingState trackingState = TrackingState.Stopped;
+            if (PerceptionHandle == 0)
+                return trackingState;
+            
             var result = NativeApi.NRTrackableGetTrackingState(PerceptionHandle, anchor_handle, ref trackingState);
             NRDebugger.Debug("[NativeMapping] NRTrackableGetTrackingState: {0}", result);
             NativeErrorListener.Check(result, this, "GetTrackingState");
@@ -149,6 +176,9 @@ namespace NRKernal
         /// <returns> The anchor native identifier. </returns>
         public string GetAnchorUUID(UInt64 anchor_handle)
         {
+            if (PerceptionHandle == 0)
+                return String.Empty;
+            
             uint len = 16;
             byte[] buffer = new byte[len];
             var result = NativeApi.NRTrackableAnchorGetUUID(PerceptionHandle, anchor_handle, buffer, ref len);
@@ -168,6 +198,9 @@ namespace NRKernal
         public NREstimateQuality EstimateMapQuality(UInt64 anchor_handle, Pose pose)
         {
             NREstimateQuality quality = NREstimateQuality.NR_ANCHOR_QUALITY_INSUFFICIENT;
+            if (PerceptionHandle == 0)
+                return quality;
+            
             ConversionUtility.UnityPoseToApiPose(pose, out var apiPose);
             var result = NativeApi.NRTrackableAnchorEstimateGetQuality(PerceptionHandle, anchor_handle, ref apiPose, ref quality);
             NRDebugger.Info("[NativeMapping] EstimateAnchorQuality: {0}", result);
@@ -177,6 +210,9 @@ namespace NRKernal
 
         public bool GetEstimateAngleRange(UInt64 anchor_handle, ref float angle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+
             var result = NativeApi.NRTrackableAnchorEstimateGetAngle(PerceptionHandle, anchor_handle, ref angle);
             NRDebugger.Info($"[NativeMapping] GetEstimateAngleRange: {result} {angle}");
             NativeErrorListener.Check(result, this, "GetEstimateAngleRange");
@@ -185,6 +221,9 @@ namespace NRKernal
 
         public bool SetEstimateAngleRange(UInt64 anchor_handle, float angle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+            
             var result = NativeApi.NRTrackableAnchorEstimateSetAngle(PerceptionHandle, anchor_handle, angle);
             NRDebugger.Info($"[NativeMapping] SetEstimateAngleRange: {result} {angle}");
             NativeErrorListener.Check(result, this, "SetEstimateAngleRange");
@@ -194,6 +233,9 @@ namespace NRKernal
 
         public bool GetEstimateDistanceRange(UInt64 anchor_handle, ref NREstimateDistance distance)
         {
+            if (PerceptionHandle == 0)
+                return false;
+
             var result = NativeApi.NRTrackableAnchorEstimateGetDistance(PerceptionHandle, anchor_handle, ref distance);
             NRDebugger.Info($"[NativeMapping] GetEstimateDistanceRange: {result} {distance}");
             NativeErrorListener.Check(result, this, "GetEstimateDistanceRange");
@@ -202,6 +244,9 @@ namespace NRKernal
 
         public bool SetEstimateDistanceRange(UInt64 anchor_handle, NREstimateDistance distance)
         {
+            if (PerceptionHandle == 0)
+                return false;
+
             var result = NativeApi.NRTrackableAnchorEstimateSetDistance(PerceptionHandle, anchor_handle, distance);
             NRDebugger.Info($"[NativeMapping] SetEstimateDistanceRange: {result} {distance}");
             NativeErrorListener.Check(result, this, "SetEstimateDistanceRange");
@@ -213,9 +258,13 @@ namespace NRKernal
         /// </summary>
         /// <param name="anchor_handle"></param>
         /// <returns>The state of the anchor</returns>
+        [Obsolete()]
         public NRAnchorState GetAnchorState(UInt64 anchor_handle)
         {
             NRAnchorState state = NRAnchorState.NR_ANCHOR_STATE_UNKNOWN;
+            if (PerceptionHandle == 0)
+                return state;
+
             var result = NativeApi.NRTrackableAnchorGetState(PerceptionHandle, anchor_handle, ref state);
             NRDebugger.Info($"[NativeMapping] GetAnchorState: {result} {state}");
             NativeErrorListener.Check(result, this, "GetAnchorState");
@@ -229,6 +278,9 @@ namespace NRKernal
         /// <returns></returns>
         public bool Remap(UInt64 anchor_handle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+
             NRDebugger.Debug("[NativeMapping] before Remap");
             var result = NativeApi.NRTrackableAnchorRemap(PerceptionHandle, anchor_handle);
             NRDebugger.Info("[NativeMapping] Remap: {0}", result);
@@ -241,6 +293,9 @@ namespace NRKernal
         /// <returns> The anchor pose. </returns>
         public Pose GetAnchorPose(UInt64 anchor_handle)
         {
+            if (PerceptionHandle == 0)
+                return Pose.identity;
+
             NativeMat4f nativePose = NativeMat4f.identity; 
             NRDebugger.Debug($"[NativeMapping] before NRTrackableAnchorGetPose: {anchor_handle} ");
             var result = NativeApi.NRTrackableAnchorGetPose(PerceptionHandle, anchor_handle, ref nativePose);
@@ -256,6 +311,9 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool DestroyAnchor(UInt64 anchor_handle)
         {
+            if (PerceptionHandle == 0)
+                return false;
+
             var result = NativeApi.NRTrackableAnchorDestroy(PerceptionHandle, anchor_handle);
             NRDebugger.Info("[NativeMapping] NRTrackableAnchorDestroy: {0}", result);
             NativeErrorListener.Check(result, this, "DestroyAnchor");

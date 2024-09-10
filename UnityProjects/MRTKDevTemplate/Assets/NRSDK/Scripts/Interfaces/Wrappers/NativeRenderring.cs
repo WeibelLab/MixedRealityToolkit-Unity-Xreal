@@ -114,6 +114,11 @@ namespace NRKernal
             NativeApi.NRRenderingGetFramePresentTime(m_RenderingHandle, ref present_time);
         }
 
+        public void SetPersistentProtect(bool persistentProtectMode)
+        {
+            NativeApi.NRRenderingSetPersistentProtect(m_RenderingHandle, persistentProtectMode ? (uint)1 : (uint)0);
+        }
+
         public bool Stop()
         {
             if (m_RenderingHandle == 0)
@@ -166,6 +171,9 @@ namespace NRKernal
 
             [DllImport(NativeConstants.NRNativeLibrary)]
             public static extern NativeResult NRRenderingInitSetFlags(UInt64 rendering_handle, UInt64 rendering_flags);
+            
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            public static extern NativeResult NRRenderingSetPersistentProtect(UInt64 rendering_handle, UInt32 state);
             #endregion
         };
     }

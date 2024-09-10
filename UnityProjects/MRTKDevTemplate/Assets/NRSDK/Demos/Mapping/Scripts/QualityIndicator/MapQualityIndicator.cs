@@ -25,14 +25,7 @@ namespace NRKernal.NRExamples
         #region public
         public static IndicatorSettings Settings => Instance.m_Settings;
         public static NRWorldAnchor CurrentAnchor => Instance.m_currentWorldAnchor;
-        public static void AddStateChangeListener(Action<NRWorldAnchor, MappingState> action)
-        {
-            Instance.OnMappingStateChanged += action;
-        }
-        public static void RemoveStateChangeListener(Action<NRWorldAnchor, MappingState> action)
-        {
-            Instance.OnMappingStateChanged -= action;
-        }
+        public static bool IsRemapping => Instance.m_isRemapping;
 
         public static void SetCurrentAnchor(NRWorldAnchor anchor, bool isRemapping = true)
         {
@@ -85,8 +78,6 @@ namespace NRKernal.NRExamples
         }
         #endregion
 
-        private event Action<NRWorldAnchor, MappingState> OnMappingStateChanged;
-
         private NRWorldAnchor m_currentWorldAnchor;
         private float nextEstimateTime;
         private List<MapQualityBar> m_bars;
@@ -124,11 +115,6 @@ namespace NRKernal.NRExamples
 
             if (Time.time > nextEstimateTime)
             {
-                if (m_currentWorldAnchor.CurrentAnchorState != NRAnchorState.NR_ANCHOR_STATE_MAPPING)
-                {
-                    return;
-                }
-
                 int index = computeBarIndex();
 
                 if (index < 0 || index >= m_bars.Count)
@@ -157,12 +143,6 @@ namespace NRKernal.NRExamples
 
             m_isRemapping = isRemapping;
             m_currentWorldAnchor = anchor;
-            m_currentWorldAnchor.OnAnchorStateChanged += MapQualityIndicator_OnAnchorStateChanged;
-        }
-
-        private void MapQualityIndicator_OnAnchorStateChanged(NRWorldAnchor anchor, MappingState state)
-        {
-            OnMappingStateChanged?.Invoke(anchor, state);
         }
 
         private void showMappingGuide()
@@ -185,7 +165,6 @@ namespace NRKernal.NRExamples
             if (m_currentWorldAnchor != null)
             {
                 NRDebugger.Info($"[{nameof(MapQualityIndicator)}] {nameof(interruptMappingGuide)} {m_currentWorldAnchor.UUID}");
-                m_currentWorldAnchor.OnAnchorStateChanged -= MapQualityIndicator_OnAnchorStateChanged;
                 m_currentWorldAnchor = null;
             }
 
@@ -196,7 +175,6 @@ namespace NRKernal.NRExamples
         {
             if (m_currentWorldAnchor != null)
             {
-                m_currentWorldAnchor.OnAnchorStateChanged -= MapQualityIndicator_OnAnchorStateChanged;
                 m_currentWorldAnchor = null;
             }
 

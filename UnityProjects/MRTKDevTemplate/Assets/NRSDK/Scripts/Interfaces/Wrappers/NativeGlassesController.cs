@@ -17,23 +17,23 @@ namespace NRKernal
     /// <param name="glasses_control_handle"> glasses_control_handle The handle of GlassesControl.</param>
     /// <param name="wearing_status">         wear_or_not , 1: put on glasses . 0: take off glasses.</param>
     /// <param name="user_data">              The custom user data.</param>
-    internal delegate void NRGlassesControlWearCallback(UInt64 glasses_control_handle, int wearing_status, UInt64 user_data);
+    public delegate void NRGlassesControlWearCallback(UInt64 glasses_control_handle, int wearing_status, UInt64 user_data);
 
     /// <summary>
     /// The callback method type which will be called when plug off xreal glasses. </summary>
     /// <param name="glasses_control_handle"> glasses_control_handle The handle of GlassesControl.</param>
     /// <param name="user_data">              The custom user data.</param>
-    internal delegate void NRGlassesControlPlugOffCallback(UInt64 glasses_control_handle, UInt64 user_data);
+    public delegate void NRGlassesControlPlugOffCallback(UInt64 glasses_control_handle, UInt64 user_data);
 
     /// <summary>
     /// The callback method type which will be called when plug off xreal glasses. </summary>
     /// <param name="glasses_control_handle"> glasses_control_handle The handle of GlassesControl.</param>
     /// <param name="user_data">              user_data The custom user data.</param>
     /// <param name="reason">                 The reason of glasses disconnect.</param>
-    internal delegate void NRGlassesControlNotifyQuitAppCallback(UInt64 glasses_control_handle, IntPtr user_data, GlassesDisconnectReason reason);
+    public delegate void NRGlassesControlNotifyQuitAppCallback(UInt64 glasses_control_handle, IntPtr user_data, GlassesDisconnectReason reason);
 
     /// <summary> A controller for handling native glasses. </summary>
-    internal partial class NativeGlassesController
+    public partial class NativeGlassesController
     {
         /// <summary> Handle of the glasses controller. </summary>
         private UInt64 m_GlassesControllerHandle = 0;

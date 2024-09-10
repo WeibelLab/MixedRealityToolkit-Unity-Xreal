@@ -11,40 +11,40 @@ using UnityEditor;
 
 namespace NRKernal
 {
-	[CustomEditor(typeof(NRSessionBehaviour))]
-	public class NRSessionBehaviourEditor : Editor
-	{
-		SerializedProperty LogLevel;
-		SerializedProperty SessionConfig;
+    [CustomEditor(typeof(NRSessionBehaviour))]
+    public class NRSessionBehaviourEditor : UnityEditor.Editor
+    {
+        SerializedProperty LogLevel;
+        SerializedProperty SessionConfig;
 
-		private void OnEnable() 
-		{
-	        // Setup the SerializedProperties
-			LogLevel = serializedObject.FindProperty("LogLevel");
-			SessionConfig = serializedObject.FindProperty("SessionConfig");
+        private void OnEnable()
+        {
+            // Setup the SerializedProperties
+            LogLevel = serializedObject.FindProperty("LogLevel");
+            SessionConfig = serializedObject.FindProperty("SessionConfig");
         }
-		override public void OnInspectorGUI()
-		{
-			NRSessionBehaviour sessionBehav = (NRSessionBehaviour)target;
-			serializedObject.Update();
+        override public void OnInspectorGUI()
+        {
+            NRSessionBehaviour sessionBehav = (NRSessionBehaviour)target;
+            serializedObject.Update();
 
-			EditorGUILayout.PropertyField(LogLevel);
-			EditorGUILayout.PropertyField(SessionConfig);
-			EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(LogLevel);
+            EditorGUILayout.PropertyField(SessionConfig);
+            EditorGUILayout.Space();
 
-			// if (GUILayout.Button("Open NRSDK Configuration"))
-			// {
-			// 	Selection.activeObject = NRProjectConfigHelper.GetProjectConfig();
-			// }
+            // if (GUILayout.Button("Open NRSDK Configuration"))
+            // {
+            // 	Selection.activeObject = NRProjectConfigHelper.GetProjectConfig();
+            // }
 
-			// Apply values to the target
-			serializedObject.ApplyModifiedProperties();
+            // Apply values to the target
+            serializedObject.ApplyModifiedProperties();
 
-			//Provide link to the unique NRProjectConfig
-			if (GUILayout.Button("Open NRProjectConfig"))
-			{
-				Selection.activeObject = (sessionBehav.SessionConfig).GlobalProjectConfig;
-			}
-		}
-	}
+            //Provide link to the unique NRProjectConfig
+            if (GUILayout.Button("Open NRProjectConfig"))
+            {
+                Selection.activeObject = (sessionBehav.SessionConfig).GlobalProjectConfig;
+            }
+        }
+    }
 }

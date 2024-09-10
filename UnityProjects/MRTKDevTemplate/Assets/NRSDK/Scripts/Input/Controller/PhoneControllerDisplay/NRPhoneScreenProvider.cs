@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -59,6 +59,18 @@ namespace NRKernal
             buttons[2] = btnHome;
             touch_x = touchX;
             touch_y = touchY;
+        }
+
+        public void Set(bool btnTouch, float touchX, float touchY)
+        {
+            buttons[1] = btnTouch;
+            touch_x = touchX;
+            touch_y = touchY;
+        }
+
+        public void Set(bool btnHome)
+        {
+            buttons[2] = btnHome;
         }
 
         public SystemInputState TransformTo(SystemInputState unitystate)

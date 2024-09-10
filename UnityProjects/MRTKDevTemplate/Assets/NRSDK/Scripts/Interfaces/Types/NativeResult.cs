@@ -71,10 +71,22 @@ namespace NRKernal
 
         /// <summary> The data is invalid. </summary>
         InvalidData = 19,
-        
+
         /// <summary> Runtime is not found. </summary>
         NR_RESULT_NOT_FIND_RUNTIME = 20,
-            
+
+        /// <summary> Operation Timeout. </summary>
+        NR_RESULT_TIMEOUT = 21,
+
+        /// <summary> License does not support requested feature. </summary>
+        NR_RESULT_LICENSE_FEATURE_UNSUPPORTED = 22,
+
+        /// <summary> License does not support current device. </summary>
+        NR_RESULT_LICENSE_DEVICE_UNSUPPORTED = 23,
+
+        /// <summary> License has already expired. </summary>
+        NR_RESULT_LICENSE_EXPIRATION = 24,
+
         // Control channel internal error
         ControlChannelInternalError = 100,
         // Control channel initialize fail

@@ -118,6 +118,12 @@ namespace NRKernal
                 ProcessMove(hoverEventData);
                 ProcessDrag(hoverEventData);
 
+                if (!Mathf.Approximately(hoverEventData.scrollDelta.sqrMagnitude,0.0f))
+                {
+                    var scrollHandler = ExecuteEvents.GetEventHandler<IScrollHandler>(hoverEventData.pointerCurrentRaycast.gameObject);
+                    ExecuteEvents.Execute(scrollHandler, hoverEventData, ExecuteEvents.scrollHandler);
+                }
+
                 for (int j = 1, jmax = raycaster.ButtonEventDataList.Count; j < jmax; ++j)
                 {
                     var buttonEventData = raycaster.ButtonEventDataList[j];
@@ -203,6 +209,14 @@ namespace NRKernal
             {
                 m_Instance.ProcessRaycast();
             }
+            var hoverEventData = raycaster.HoverEventData;
+            if(m_Instance != null && hoverEventData != null && hoverEventData.pointerEnter != null)
+            {
+                m_Instance.HandlePointerExitAndEnter(hoverEventData, null);
+                if (hoverEventData.pressEnter != null)
+                    HandlePressExitAndEnter(hoverEventData, null);
+            }
+                
             raycasters.Remove(raycaster);
         }
 
@@ -357,7 +371,7 @@ namespace NRKernal
 
             var pointerUpHandler = ExecuteEvents.GetEventHandler<IPointerClickHandler>(currentOverGo);
 
-            if (eventData.pointerPress == pointerUpHandler && eventData.eligibleForClick)
+            if (eventData.pointerPress != null && eventData.pointerPress == pointerUpHandler && eventData.eligibleForClick)
             {
                 ExecuteEvents.Execute(eventData.pointerPress, eventData, ExecuteEvents.pointerClickHandler);
             }

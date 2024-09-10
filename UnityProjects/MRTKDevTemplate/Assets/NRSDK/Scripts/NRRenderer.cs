@@ -53,7 +53,7 @@ namespace NRKernal
                 return NRSessionManager.Instance.NativeAPI.NativeRenderring;
             }
         }
-        
+
         /// <summary> Values that represent renderer states. </summary>
         public enum RendererState
         {
@@ -93,7 +93,8 @@ namespace NRKernal
         public void Start()
         {
             NRDebugger.Info("[NRRender] Start");
-            if (m_CurrentState != RendererState.UnInitialized)
+            if (m_CurrentState != RendererState.UnInitialized
+                && m_CurrentState != RendererState.Destroyed)
             {
                 return;
             }

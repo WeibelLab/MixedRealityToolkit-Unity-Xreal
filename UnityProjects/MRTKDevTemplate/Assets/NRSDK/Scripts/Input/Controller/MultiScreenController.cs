@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -32,18 +32,27 @@ namespace NRKernal
             this.m_Receiver = receiver;
             InitSystemButtonEvent();
         }
-        
-        public void Destroy() {}
+
+        public void Destroy() { }
 
         /// <summary> Initializes the system button event. </summary>
         private void InitSystemButtonEvent()
         {
             if (Trigger != null)
+            {
+                Trigger.TriggerEvent -= OnBtnTrigger;
                 Trigger.TriggerEvent += OnBtnTrigger;
+            }
             if (App != null)
+            {
+                App.TriggerEvent -= OnBtnTrigger;
                 App.TriggerEvent += OnBtnTrigger;
+            }
             if (Home != null)
+            {
+                Home.TriggerEvent -= OnBtnTrigger;
                 Home.TriggerEvent += OnBtnTrigger;
+            }
         }
 
         /// <summary> Executes the 'button trigger' action. </summary>
@@ -54,36 +63,36 @@ namespace NRKernal
         {
             if (key.Equals(NRButton.Enter))
             {
-                if (go == App.gameObject)
+                if (go == App?.gameObject)
                 {
                     m_SystemButtonState.buttons[0] = true;
                 }
-                if (go == Trigger.gameObject)
+                if (go == Trigger?.gameObject)
                 {
                     m_SystemButtonState.buttons[1] = true;
                 }
-                if (go == Home.gameObject)
+                if (go == Home?.gameObject)
                 {
                     m_SystemButtonState.buttons[2] = true;
                 }
             }
             else if (key.Equals(NRButton.Exit))
             {
-                if (go == App.gameObject)
+                if (go == App?.gameObject)
                 {
                     m_SystemButtonState.buttons[0] = false;
                 }
-                if (go == Trigger.gameObject)
+                if (go == Trigger?.gameObject)
                 {
                     m_SystemButtonState.buttons[1] = false;
                 }
-                if (go == Home.gameObject)
+                if (go == Home?.gameObject)
                 {
                     m_SystemButtonState.buttons[2] = false;
                 }
             }
 
-            if (go == Trigger.gameObject
+            if (go == Trigger?.gameObject
                 && (key.Equals(NRButton.Hover) || key.Equals(NRButton.Enter)))
             {
                 CalculateTouchPos(go, racastInfo);
@@ -103,30 +112,30 @@ namespace NRKernal
         private void CalculateTouchPos(GameObject go, RaycastResult racastInfo)
         {
             RectTransform rect = go.GetComponent<RectTransform>();
-            Vector3[] v        = new Vector3[4];
+            Vector3[] v = new Vector3[4];
             rect.GetWorldCorners(v);
 
-            var rightToCenter  = (v[3] - v[0]) * 0.5f;
-            var topToCenter    = (v[1] - v[0]) * 0.5f;
-            var width          = (v[3] - v[0]).magnitude;
-            var height         = (v[1] - v[0]).magnitude;
+            var rightToCenter = (v[3] - v[0]) * 0.5f;
+            var topToCenter = (v[1] - v[0]) * 0.5f;
+            var width = (v[3] - v[0]).magnitude;
+            var height = (v[1] - v[0]).magnitude;
 
-            var rectCenter     = go.transform.position;
-            rectCenter.x       += width * (0.5f - rect.pivot.x);
-            rectCenter.y       += height * (0.5f - rect.pivot.y);
-            var touchToCenter  = racastInfo.worldPosition - rectCenter;
-           
-            var halfWidth      = width * 0.5f;
-            var halfHeight     = height * 0.5f;
-            var alpha          = Vector3.Angle(rightToCenter, touchToCenter);
-            var touchToX       = (touchToCenter * Mathf.Cos(alpha * Mathf.PI / 180)).magnitude;
-            var touchToY       = (touchToCenter * Mathf.Sin(alpha * Mathf.PI / 180)).magnitude;
+            var rectCenter = go.transform.position;
+            rectCenter.x += width * (0.5f - rect.pivot.x);
+            rectCenter.y += height * (0.5f - rect.pivot.y);
+            var touchToCenter = racastInfo.worldPosition - rectCenter;
 
-            bool x_forward     = Vector3.Dot(touchToCenter, rightToCenter) > 0;
-            bool y_forward     = Vector3.Dot(touchToCenter, topToCenter) > 0;
+            var halfWidth = width * 0.5f;
+            var halfHeight = height * 0.5f;
+            var alpha = Vector3.Angle(rightToCenter, touchToCenter);
+            var touchToX = (touchToCenter * Mathf.Cos(alpha * Mathf.PI / 180)).magnitude;
+            var touchToY = (touchToCenter * Mathf.Sin(alpha * Mathf.PI / 180)).magnitude;
 
-            var touchx         = touchToX > halfWidth ? (x_forward ? 1f : -1f) : (x_forward ? touchToX / halfWidth : -touchToX / halfWidth);
-            var touchy         = touchToY > halfHeight ? (y_forward ? 1f : -1f) : (y_forward ? touchToY / halfHeight : -touchToY / halfHeight);
+            bool x_forward = Vector3.Dot(touchToCenter, rightToCenter) > 0;
+            bool y_forward = Vector3.Dot(touchToCenter, topToCenter) > 0;
+
+            var touchx = touchToX > halfWidth ? (x_forward ? 1f : -1f) : (x_forward ? touchToX / halfWidth : -touchToX / halfWidth);
+            var touchy = touchToY > halfHeight ? (y_forward ? 1f : -1f) : (y_forward ? touchToY / halfHeight : -touchToY / halfHeight);
             m_SystemButtonState.touch_x = touchx;
             m_SystemButtonState.touch_y = touchy;
         }

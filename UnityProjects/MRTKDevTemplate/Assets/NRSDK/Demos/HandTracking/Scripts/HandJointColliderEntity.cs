@@ -9,7 +9,8 @@ namespace NRKernal.NRExamples
         public HandEnum handEnum;
         public HandJointID handJoint;
         public HandGesture activeByHandGesture = HandGesture.None;
-
+        [SerializeField]
+        private bool m_ShowMeshInMonoMode = false;
         private HandState m_RelatedHandState;
         private Collider m_JointCollider;
         private MeshRenderer m_MeshRenderer;
@@ -28,7 +29,8 @@ namespace NRKernal.NRExamples
         {
             m_RelatedHandState = NRInput.Hands.GetHandState(handEnum);
             IsColliderActive = ShouldActive();
-            m_MeshRenderer.enabled = m_JointCollider.enabled = IsColliderActive;
+            m_JointCollider.enabled = IsColliderActive;
+            m_MeshRenderer.enabled = IsColliderActive && (!NRFrame.MonoMode || (NRFrame.MonoMode && m_ShowMeshInMonoMode));
             if (IsColliderActive)
             {
                 UpdateJointPose();

@@ -36,7 +36,7 @@ namespace NRKernal.NRExamples
         /// <summary> Starts this object. </summary>
         private void Start()
         {
-            MapQualityIndicator.AddStateChangeListener(OnAnchorStateChanged);
+            //MapQualityIndicator.AddStateChangeListener(OnAnchorStateChanged);
 
             var anchorItems = FindObjectsOfType<AnchorItem>();
             foreach (var item in anchorItems)
@@ -59,7 +59,19 @@ namespace NRKernal.NRExamples
                 }
             };
             StartCoroutine(EnableAnchorAsync());
+        }
 
+        private void OnEnable()
+        {
+            StartCoroutine(EnableAnchorAsync());            
+        }
+
+        private void OnDisable()
+        {
+            MainThreadDispather.QueueOnMainThread(() =>
+            {
+                m_NRWorldAnchorStore.DisableAllAnchors();
+            });
         }
 
         private void LocalMapExample_NotifyMessage(string msg)
@@ -73,19 +85,6 @@ namespace NRKernal.NRExamples
             if (NRInput.GetButtonDown(ControllerButton.TRIGGER) && target != null)
             {
                 AddAnchor();
-            }
-        }
-
-        /// <summary>
-        /// Callback method triggered when the application is paused or resumed.
-        /// </summary>
-        /// <param name="pause">True if the application is paused; false if it's resumed.</param>
-        private void OnApplicationPause(bool pause)
-        {
-            NRDebugger.Info("[LocalMapExample] OnApplicationPause: {0}", pause);
-            if (!pause)
-            {
-                StartCoroutine(EnableAnchorAsync());
             }
         }
 
@@ -138,52 +137,6 @@ namespace NRKernal.NRExamples
             Destroy(target.gameObject.GetComponent<BoxCollider>());
 
             SwitchAnchorPanel();
-        }
-
-
-        private async void OnAnchorStateChanged(NRWorldAnchor anchor, MappingState state)
-        {
-            NRDebugger.Info($"[{nameof(LocalMapExample)}] {nameof(OnAnchorStateChanged)} {anchor.UUID} {state}");
-            switch (state)
-            {
-                case MappingState.MAPPING_STATE_MAPPING:
-                    //开始引导
-                    if (Settings.showIndicator)
-                    {
-
-#if UNITY_EDITOR
-                        if (false)
-#endif
-                        {
-                            float angle = 180;
-                            NREstimateDistance distance = NREstimateDistance.NR_ESTIMATE_DISTANCE_MEDIUM;
-                            anchor.GetEstimateRange(ref angle, ref distance);
-                            NRDebugger.Info($"[{GetType()}] {nameof(MapQualityIndicator)} SetAngleRange {angle}");
-                            MapQualityIndicator.Settings.angleRange = angle;
-                        }
-
-                        if(m_IsFirstMapping)
-                        {
-                            m_IsFirstMapping = false;
-                            await ShowGuideDialog(anchor);
-                        }
-                        MapQualityIndicator.ShowMappingGuide();
-                    }
-                    break;
-                case MappingState.MAPPING_STATE_SUCCESS:
-                    MapQualityIndicator.FinishMappingGuide();
-                    break;
-                case MappingState.MAPPING_STATE_NEW_FAILURE:
-                    NRDebugger.Debug($"[{nameof(LocalMapExample)}] {nameof(MappingState.MAPPING_STATE_NEW_FAILURE)}  DestroyAnchor handle:{anchor.UUID}");
-                    anchor.DestroyAnchor();
-                    MapQualityIndicator.InterruptMappingGuide();
-                    Toaster.Toast(PromptTexts.s_ReAddPrompt, 12000);
-                    break;
-                case MappingState.MAPPING_STATE_REMAP_FAILURE:
-                    MapQualityIndicator.InterruptMappingGuide();
-                    Toaster.Toast(PromptTexts.s_RemapPrompt, 12000);
-                    break;
-            }
         }
 
         private async Task ShowGuideDialog(NRWorldAnchor anchor)
@@ -255,7 +208,7 @@ namespace NRKernal.NRExamples
         }
 
         /// <summary> Add a new anchor. </summary>
-        public void AddAnchor()
+        public async void AddAnchor()
         {
             if (m_NRWorldAnchorStore == null || target == null)
             {
@@ -282,20 +235,30 @@ namespace NRKernal.NRExamples
             anchor.UserDefinedKey = key;
             bool success = anchor.CreateAnchor();
 
+            DestroyImmediate(target.gameObject);
+
             if (success)
             {
-                anchor.SetEstimateRange(anchorItem.ObserveAngle, anchorItem.ObserveDistance);
-#if UNITY_EDITOR
-                MapQualityIndicator.Settings.angleRange = anchorItem.ObserveAngle;
-#endif
+                MapQualityIndicator.Settings.angleRange = 180;
                 MapQualityIndicator.SetCurrentAnchor(anchor, false);
+
+                await ShowMapQualityIndicator(anchor);
             }
             else
             {
                 DestroyImmediate(go);
             }
 
-            DestroyImmediate(target.gameObject);
+        }
+
+        private async Task ShowMapQualityIndicator(NRWorldAnchor anchor)
+        {
+            if (m_IsFirstMapping)
+            {
+                m_IsFirstMapping = false;
+                await ShowGuideDialog(anchor);
+            }
+            MapQualityIndicator.ShowMappingGuide();
         }
     }
 

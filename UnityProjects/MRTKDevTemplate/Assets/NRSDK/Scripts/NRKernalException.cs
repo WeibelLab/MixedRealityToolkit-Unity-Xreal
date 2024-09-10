@@ -248,4 +248,57 @@ namespace NRKernal
         }
     }
     #endregion
+
+    #region license error
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// /// license errors
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// <summary> A nr license feature unsupported error. </summary>
+    public class NRLicenseFeatureUnSupported : NRNativeError
+    {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="result"> The result code. </param>
+        /// <param name="msg"> The message.</param>
+        /// <param name="innerException"> (Optional) The inner exception.</param>
+        public NRLicenseFeatureUnSupported(NativeResult result, string msg, Exception innerException = null)
+            : base(result, msg, Level.Normal, innerException)
+        {
+
+        }
+    }
+
+    /// <summary> A nr license device unsupported error. </summary>
+    public class NRLicenseDeviceUnSupported : NRNativeError
+    {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="result"> The result code. </param>
+        /// <param name="msg"> The message.</param>
+        /// <param name="innerException"> (Optional) The inner exception.</param>
+        public NRLicenseDeviceUnSupported(NativeResult result, string msg, Exception innerException = null)
+            : base(result, msg, Level.Normal, innerException)
+        {
+
+        }
+    }
+
+    /// <summary> A nr license expired error. </summary>
+    public class NRLicenseExpired : NRNativeError
+    {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="result"> The result code. </param>
+        /// <param name="msg"> The message.</param>
+        /// <param name="innerException"> (Optional) The inner exception.</param>
+        public NRLicenseExpired(NativeResult result, string msg, Exception innerException = null)
+            : base(result, msg, Level.Normal, innerException)
+        {
+
+        }
+    }
+    #endregion
 }

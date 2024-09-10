@@ -26,6 +26,7 @@ namespace NRKernal
 
     using NRNotificationType = NRNotificationListener.NRNotificationType;
     using Notification = NRNotificationListener.Notification;
+    using System.IO;
 
     /// <summary>
     /// Manages AR system state and handles the session lifecycle. this class, application can create
@@ -82,8 +83,6 @@ namespace NRKernal
         /// <value> The nr metrics. </value>
         public NRMetrics NRMetrics { get; set; }
 
-        private NRMultiResumeMediator mMultiResumeMediator;
-
         /// <summary> Gets or sets the virtual displayer. </summary>
         /// <value> The virtual displayer. </value>
         public NRVirtualDisplayer VirtualDisplayer { get; set; }
@@ -97,6 +96,10 @@ namespace NRKernal
         /// <summary> External function which helps to generate readable error msg. </summary>
         public Func<NRKernalError, string> ErrorMessageGenerator = null;
         public Func<NRNotificationType, Notification, string> NotificationMessageGenerator = null;
+
+
+        public static Action OnSessionCreate;
+        public static Action OnSessionDestroy;
 
         /// <summary> Gets the center camera anchor. </summary>
         /// <value> The center camera anchor. </value>
@@ -228,6 +231,21 @@ namespace NRKernal
                 return;
             }
 
+#if !UNITY_EDITOR && UNITY_ANDROID
+            if (NRSessionBehaviour.SessionConfig.SupportMultiResume)
+            {
+                var floatingViewReplaceTool = UnityEngine.Object.FindObjectOfType<NRFloatingViewReplace>();
+                if (floatingViewReplaceTool != null)
+                {
+                    NRFloatingViewProvider.Instance.RegisterFloatViewProxy(floatingViewReplaceTool.CreateFloatingViewProxy());
+                }
+                else
+                {
+                    NRFloatingViewProvider.Instance.RegisterFloatViewProxy(new NRDefaultFloatingViewProxy());
+                }
+            }
+#endif
+
             // NRMetrics = session.GetComponent<NRMetrics>();
             // if (NRMetrics == null)
             // {
@@ -265,10 +283,46 @@ namespace NRKernal
             SessionState = SessionState.Initialized;
 
             LoadNotification();
-
-            var nativeMediator = new GameObject("NRNativeMediator");
-            mMultiResumeMediator = nativeMediator.AddComponent<NRMultiResumeMediator>();
             NRDebugger.Info("[NRSessionManager] CreateSession finish.");
+
+            OnSessionCreate?.Invoke();
+        }
+
+        public void ReStartSession()
+        {
+            var session = NRSessionBehaviour;
+            NRSessionBehaviour = null;
+            CreateSession(session);
+            StartSession();
+            NRInput.StartInput();
+        }
+        /// <summary>
+        /// Get sdk license.
+        /// </summary>
+        internal byte[] GetNRSDKLicenseData()
+        {
+            if (NRSessionBehaviour == null)
+                return null;
+            byte[] licenseData = null;
+            var filePath = Path.Combine(Application.persistentDataPath, "nrsdk_license.bin");
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    licenseData = File.ReadAllBytes(filePath);
+                }
+                catch (Exception ex)
+                {
+                    NRDebugger.Warning("[NRSessionManager] Read persistent license failed: {0}", ex.Message);
+                }
+            }
+            if (licenseData == null)
+            {
+                var licenseAsset = NRSessionBehaviour.SessionConfig?.GetLicenseAsset();
+                licenseData = licenseAsset?.bytes;
+            }
+
+            return licenseData;
         }
 
         public NRNotificationListener NotificationListener { get; private set; }
@@ -355,6 +409,18 @@ namespace NRKernal
             else if (error is NRGlassesNotAvailbleError)
             {
                 return NativeConstants.GlassesNotAvailbleErrorTip;
+            }
+            else if (error is NRLicenseExpired)
+            {
+                return NativeConstants.LicenseExpiredErrorTip;
+            }
+            else if (error is NRLicenseDeviceUnSupported)
+            {
+                return NativeConstants.LicenseNotSupportCurrentDevice;
+            }
+            else if (error is NRLicenseFeatureUnSupported)
+            {
+                return NativeConstants.LicenseNotSupportRequestedFeature;
             }
             else
             {
@@ -499,7 +565,7 @@ namespace NRKernal
 
             NRHMDPoseTracker.AutoAdaptTrackingType();
             NRDebugger.Info("[NRSessionManager] StartSession: InitTrackingType={0}", NRHMDPoseTracker.TrackingMode);
-            TrackingSubSystem.InitTrackingType(NRHMDPoseTracker.TrackingMode);
+            TrackingSubSystem.InitTrackingType(NRHMDPoseTracker.GetTrackingSubsystemDescriptor(NRHMDPoseTracker.TrackingMode));
             this.AutoAdaptSessionConfig();
             if (NRHMDPoseTracker.TrackingMode != TrackingType.Tracking6Dof)
             {
@@ -572,17 +638,17 @@ namespace NRKernal
             }
 
             NRDebugger.Info("[NRSessionManager] Destroy");
-            GameObject.Destroy(mMultiResumeMediator.gameObject);
             // Do not put it in other thread...
             SessionState = SessionState.Destroyed;
 
             VirtualDisplayer?.Destroy();
-            NRSwapChainMan.Destroy();            
+            NRSwapChainMan.Destroy();
             TrackableFactory.Destroy();
+            NRInput.Destroy();
             TrackingSubSystem.Destroy();
+
             NRFrame.DestroySubsystem<NRTrackingSubsystemDescriptor, NRTrackingSubsystem>(NRTrackingSubsystemDescriptor.Name);
 
-            NRInput.Destroy();
             NRDevice.Instance?.Destroy();
 
             if (TrackingLostListener != null)
@@ -651,6 +717,8 @@ namespace NRKernal
             }
 
             NRDebugger.Info("[NRSessionManager] ReleaseSDK finish");
+
+            OnSessionDestroy?.Invoke();
         }
     }
 }

@@ -73,7 +73,7 @@ namespace NRKernal
         /// <returns> True if it succeeds, false if it fails. </returns>
         public bool GetHeadPose(ref Pose pose, UInt64 timestamp)
         {
-            if (m_HeadTrackingHandle == 0)
+            if (m_HeadTrackingHandle == 0 || m_NativeInterface.PerceptionHandle == 0)
             {
                 pose = Pose.identity;
                 return false;
@@ -97,7 +97,7 @@ namespace NRKernal
 
         public bool GetHeadPoseRecommend(ref Pose pose)
         {
-            if (m_HeadTrackingHandle == 0)
+            if (m_HeadTrackingHandle == 0 || m_NativeInterface.PerceptionHandle == 0)
             {
                 pose = Pose.identity;
                 return false;
@@ -116,7 +116,7 @@ namespace NRKernal
 
         public void Recenter()
         {
-            if (m_HeadTrackingHandle == 0)
+            if (m_HeadTrackingHandle == 0 || m_NativeInterface.PerceptionHandle == 0)
             {
                 return;
             }

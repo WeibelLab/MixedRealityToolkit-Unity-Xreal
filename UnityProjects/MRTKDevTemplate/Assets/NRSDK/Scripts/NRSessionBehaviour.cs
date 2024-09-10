@@ -24,11 +24,11 @@ namespace NRKernal
     {
         /// <summary> LogVevel of NRSDK should be while release. </summary>
         [Tooltip("LogLevel of NRSDK.")]
-		[SerializeField]
+        [SerializeField]
         LogLevel LogLevel = LogLevel.Info;
         /// <summary> The SessionConfig of nrsession. </summary>
         [Tooltip("A scriptable object specifying the NRSDK session configuration.")]
-		[SerializeField]
+        [SerializeField]
         public NRSessionConfig SessionConfig;
 
         /// <summary>
@@ -53,8 +53,19 @@ namespace NRKernal
 #if USING_XR_SDK && !UNITY_EDITOR
             NativeXRPlugin.SetLogLevel((int)NRDebugger.logLevel);
 #endif
-            Debug.LogFormat("[SessionBehaviour] Awake CreateSession: logLevel={0} => {1}, isXR={2}, multiThread={3}, supportMultiResume={4}", 
+            Debug.LogFormat("[SessionBehaviour] Awake CreateSession: logLevel={0} => {1}, isXR={2}, multiThread={3}, supportMultiResume={4}",
                 LogLevel, NRDebugger.logLevel, NRFrame.IsXR, SessionConfig.UseMultiThread, SessionConfig.SupportMultiResume);
+
+            if (SessionConfig.SupportMultiResume)
+            {
+                if (NRMultiResumeMediator.Instance == null)
+                {
+                    var nativeMediator = new GameObject("NRNativeMediator");
+                    nativeMediator.AddComponent<NRMultiResumeMediator>();
+                    Debug.LogFormat("[SessionBehaviour] Awake Create NRMultiResumeMediator");
+                }
+            }
+
             NRSessionManager.Instance.CreateSession(this);
         }
 
@@ -108,6 +119,12 @@ namespace NRKernal
             base.OnDestroy();
             NRDebugger.Info("[SessionBehaviour] OnDestroy: DestroySession");
             NRSessionManager.Instance.DestroySession();
+            
+            if (NRMultiResumeMediator.Instance != null)
+            {
+                Destroy(NRMultiResumeMediator.Instance.gameObject);
+                Debug.LogFormat("[SessionBehaviour] OnDestroy Destroy NRMultiResumeMediator");
+            }
         }
     }
 }

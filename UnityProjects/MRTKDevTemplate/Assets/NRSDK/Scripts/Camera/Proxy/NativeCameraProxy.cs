@@ -21,7 +21,7 @@ namespace NRKernal
         public static string ID = "NativeCameraProxy";
         /// <summary> Gets or sets the camera data provider. </summary>
         /// <value> The camera data provider. </value>
-        protected ICameraDataProvider CameraDataProvider { get; private set; }
+        protected ICameraDataProvider CameraDataProvider { get; set; }
         /// <summary> The texture pointer. </summary>
         protected IntPtr m_TexturePtr = IntPtr.Zero;
         /// <summary> The current frame. </summary>
@@ -35,20 +35,9 @@ namespace NRKernal
         private bool m_IsImageFormatSet = false;
         /// <summary> The last frame. </summary>
         protected int m_LastFrame = -1;
-        /// <summary> True if is playing, false if not. </summary>
-        protected bool m_IsPlaying = false;
 
-        /// <summary> True if paused, false if not</summary>
-        protected bool m_IsPaused = false;
-        /// <summary> Gets a value indicating whether this object is camera playing. </summary>
-        /// <value> True if this object is camera playing, false if not. </value>
-        public bool IsCamPlaying
-        {
-            get
-            {
-                return m_IsPlaying;
-            }
-        }
+        protected State m_State = State.Stopped;
+        public State CurrentState => m_State;
 
         /// <summary> Interface of external frame consumer. </summary>
         public interface IExternFrameConsumer
@@ -145,6 +134,7 @@ namespace NRKernal
                 return m_ActiveTextures;
             }
         }
+
 
         /// <summary> Specialized constructor for use only by derived class. </summary>
         /// <param name="provider"> The provider.</param>
@@ -252,12 +242,12 @@ namespace NRKernal
                 Initialize();
             }
 
-            if (m_IsPlaying)
+            if (m_State == State.Playing)
             {
                 return;
             }
 
-            m_IsPlaying = true;
+            m_State = State.Playing;
 
             NRDebugger.Info("[NativeCameraProxy] StartCapture begin.");
             //System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
@@ -276,7 +266,7 @@ namespace NRKernal
             {
                 return true;
             }
-            return m_IsPlaying && m_CameraFrames.Count > 0;
+            return m_State == State.Playing && m_CameraFrames.Count > 0;
         }
 
         /// <summary> Gets the frame. </summary>
@@ -305,7 +295,7 @@ namespace NRKernal
         /// <param name="timestamp">  The timestamp.</param>
         protected void QueueFrame(IntPtr textureptr, int size, UInt64 timestamp)
         {
-            if (!m_IsPlaying)
+            if (m_State != State.Playing)
             {
                 NRDebugger.Error("camera was not stopped properly, it still sending data.");
                 return;
@@ -317,7 +307,7 @@ namespace NRKernal
                 m_CameraFrames.Enqueue(frame);
                 if (m_ExternFrameConsumer != null)
                 {
-                    m_ExternFrameConsumer.UpdateFrame(NativeDevice.RGB_CAMERA,  frame);
+                    m_ExternFrameConsumer.UpdateFrame(NativeDevice.RGB_CAMERA, frame);
                 }
             }
             else
@@ -328,26 +318,26 @@ namespace NRKernal
 
         public void Pause()
         {
-            if (!m_IsPlaying || m_IsPaused)
+            if (m_State == State.Paused)
                 return;
 
-            m_IsPaused = true;
+            m_State = State.Paused;
             CameraDataProvider.PauseCapture();
         }
 
         public void Resume()
         {
-            if (!m_IsPlaying || !m_IsPaused)
+            if (m_State != State.Paused)
                 return;
 
-            m_IsPaused = false;
+            m_State = State.Playing;
             CameraDataProvider.ResumeCapture();
         }
 
         /// <summary> Stop the camera. </summary>
         public virtual void Stop()
         {
-            if (!m_IsPlaying)
+            if (m_State == State.Stopped)
             {
                 return;
             }
@@ -355,7 +345,7 @@ namespace NRKernal
             // If there is no a active texture, pause and release camera resource.
             if (m_ActiveTextures.Count == 0)
             {
-                m_IsPlaying = false;
+                m_State = State.Stopped;
                 NRDebugger.Info("[NativeCameraProxy] StopCapture begin.");
                 //System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
                 //stopwatch.Start();
@@ -383,7 +373,17 @@ namespace NRKernal
             m_ActiveTextures = null;
             m_IsInitialized = false;
             m_IsImageFormatSet = false;
-            m_IsPlaying = false;
+            m_State = State.Stopped;
+        }
+        /// <summary> Values that represent states. </summary>
+        public enum State
+        {
+            /// <summary> An enum constant representing the playing option. </summary>
+            Playing,
+            /// <summary> An enum constant representing the paused option. </summary>
+            Paused,
+            /// <summary> An enum constant representing the stopped option. </summary>
+            Stopped
         }
     }
 }

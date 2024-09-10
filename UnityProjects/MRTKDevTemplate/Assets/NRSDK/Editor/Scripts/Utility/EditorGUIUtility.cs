@@ -4,7 +4,7 @@ using UnityEditor;
 using System.Diagnostics;
 using Object = UnityEngine.Object;
 
-public static class NREditorUtility 
+public static class NREditorUtility
 {
     [Conditional("UNITY_EDITOR_WIN"), Conditional("UNITY_STANDALONE_WIN"), Conditional("UNITY_ANDROID")]
     public static void BoolField(Object target, string name, ref bool member, ref bool modified)
@@ -15,7 +15,7 @@ public static class NREditorUtility
     [Conditional("UNITY_EDITOR_WIN"), Conditional("UNITY_STANDALONE_WIN"), Conditional("UNITY_ANDROID")]
     public static void BoolField(Object target, GUIContent name, ref bool member, ref bool modified)
     {
-		EditorGUI.BeginChangeCheck();
+        EditorGUI.BeginChangeCheck();
         bool value = EditorGUILayout.Toggle(name, member);
         if (EditorGUI.EndChangeCheck())
         {
@@ -40,6 +40,25 @@ public static class NREditorUtility
         {
             Undo.RecordObject(target, "Changed " + name);
             select = value;
+            modified = true;
+        }
+    }
+
+    [Conditional("UNITY_EDITOR_WIN"), Conditional("UNITY_STANDALONE_WIN"), Conditional("UNITY_ANDROID")]
+    public static void ObjectField<T>(Object target, Object member, string name, bool allowScene, Action<T> act, ref bool modified) where T : class
+    {
+        ObjectField<T>(target, member, new GUIContent(name), allowScene, act, ref modified);
+    }
+
+    [Conditional("UNITY_EDITOR_WIN"), Conditional("UNITY_STANDALONE_WIN"), Conditional("UNITY_ANDROID")]
+    public static void ObjectField<T>(Object target, Object member, GUIContent name, bool allowScene, Action<T> act, ref bool modified) where T : class
+    {
+        EditorGUI.BeginChangeCheck();
+        Object value = EditorGUILayout.ObjectField(name, member, typeof(T), allowScene);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(target, "Changed " + name);
+            act?.Invoke(value as T);
             modified = true;
         }
     }

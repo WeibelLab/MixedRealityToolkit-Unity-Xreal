@@ -49,6 +49,8 @@ namespace NRKernal
             }
 
             string module_tag = string.Format("[{0}] {1}: ", module.GetType().Name, funcName);
+            CheckLicenseError(result, module_tag, needthrowerror);
+
             if (needthrowerror)
             {
                 try
@@ -115,6 +117,36 @@ namespace NRKernal
             else
             {
                 NRDebugger.Error(module_tag + result.ToString());
+            }
+        }
+
+        private static void CheckLicenseError(NativeResult result, string moduleTag, bool needthrowerror)
+        {
+            try
+            {
+                switch (result)
+                {
+                    case NativeResult.NR_RESULT_LICENSE_FEATURE_UNSUPPORTED:
+                        throw new NRLicenseFeatureUnSupported(result, moduleTag + "License feature not supported!");
+                    case NativeResult.NR_RESULT_LICENSE_DEVICE_UNSUPPORTED:
+                        throw new NRLicenseDeviceUnSupported(result, moduleTag + "License device not supported!");
+                    case NativeResult.NR_RESULT_LICENSE_EXPIRATION:
+                        throw new NRLicenseExpired(result, moduleTag + "License expired!");
+                    default:
+                        break;
+                }
+            }
+            catch (NRNativeError e)
+            {
+                MainThreadDispather.QueueOnMainThread(() =>
+                {
+                    NRSessionManager.Instance.HandleKernalError(e);
+                });
+
+                if (needthrowerror && (e is NRKernalError) && ((e as NRKernalError).level == Level.High))
+                {
+                    throw e;
+                }
             }
         }
     }

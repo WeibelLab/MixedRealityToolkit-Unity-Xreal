@@ -13,6 +13,8 @@
 
 namespace NRKernal
 {
+    using AOT;
+    using System;
     using System.Collections.Generic;
     using UnityEngine;
 #if USING_XR_SDK
@@ -35,6 +37,7 @@ namespace NRKernal
             }
         }
 #endif
+        static Action<bool> OnInputSubSystemStart;
 
         public NRTrackingDataProvider()
         {
@@ -56,6 +59,7 @@ namespace NRKernal
             NRDebugger.Info("[NRTrackingDataProvider] Start");
 #if USING_XR_SDK
             XRInputSubsystem?.Start();
+            NativeXRPlugin.RegistInputSubSystemEventCallback(InputSubSystemStart);
             m_NativeHeadTracking.Create(NativeXRPlugin.GetHeadTrackingHandle());
 #else
             m_NativePerception.Start();
@@ -64,22 +68,38 @@ namespace NRKernal
             NRDebugger.Info("[NRTrackingDataProvider] Started");
         }
 
-        public void Pause()
+        [MonoPInvokeCallback(typeof(OnInputSubSystemStartCallback))]
+        private static void InputSubSystemStart(bool start)
         {
+            NRDebugger.Info("[NRTrackingDataProvider] InputSubSystemStart start = {0}", start);
+            OnInputSubSystemStart?.Invoke(start);
+        }
+
+        public void RegistInputSubSystemEventCallback(Action<bool> callback)
+        {
+            OnInputSubSystemStart += callback;
+        }
+
+        public void Pause()
+        {            
+            NRDebugger.Info("[NRTrackingDataProvider] Pause");
 #if USING_XR_SDK
             XRInputSubsystem?.Stop();
 #else
             m_NativePerception.Pause();
 #endif
+            NRDebugger.Info("[NRTrackingDataProvider] Paused");
         }
 
         public void Resume()
         {
+            NRDebugger.Info("[NRTrackingDataProvider] Resume");
 #if USING_XR_SDK
             XRInputSubsystem?.Start();
 #else
             m_NativePerception.Resume();
 #endif
+            NRDebugger.Info("[NRTrackingDataProvider] Resumed");
         }
 
         public void Recenter()
@@ -98,16 +118,16 @@ namespace NRKernal
 
             m_NativePerception.Stop();
             m_NativePerception.Destroy();
-            NRDebugger.Info("[NRTrackingDataProvider] Destroyed");
 #endif
+            NRDebugger.Info("[NRTrackingDataProvider] Destroyed");
         }
 
-        public bool SwitchTrackingType(TrackingType type)
+        public bool SwitchTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
 #if !USING_XR_SDK
             m_NativeHeadTracking.Destroy();
 #endif
-            m_NativePerception.SwitchTrackingType(type);
+            m_NativePerception.SwitchTrackingType(descriptor);
 #if USING_XR_SDK
             m_NativeHeadTracking.Create(NativeXRPlugin.GetHeadTrackingHandle());
 #else
@@ -127,9 +147,9 @@ namespace NRKernal
             return m_NativeHeadTracking.GetHeadPose(ref pose, timestamp);
         }
 
-        public bool InitTrackingType(TrackingType type)
+        public bool InitTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
-            return m_NativePerception.SwitchTrackingType(type);
+            return m_NativePerception.SwitchTrackingType(descriptor);
         }
 
         public bool GetFramePresentTimeByCount(uint count, ref ulong timeStamp)

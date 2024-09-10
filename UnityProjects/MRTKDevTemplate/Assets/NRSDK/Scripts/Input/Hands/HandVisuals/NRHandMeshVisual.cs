@@ -11,6 +11,8 @@
 
         [SerializeField]
         private bool m_UpdateHandScale;
+        [SerializeField]
+        private bool m_ShowMeshInMonoMode = false;
         // Use distance between these joints to calculate the length of hand
         private readonly List<HandJointID> m_HandLengthJoints = new List<HandJointID>() {
             HandJointID.MiddleTip, HandJointID.MiddleDistal, HandJointID.MiddleMiddle, HandJointID.MiddleProximal, HandJointID.Wrist
@@ -58,8 +60,9 @@
             if (m_HandMeshJoint != null)
             {
                 var handState = NRInput.Hands.GetHandState(m_HandMeshJoint.HandEnum);
-                m_HandMeshJoint.gameObject.SetActive(handState.isTracked);
-                if (handState.isTracked)
+                bool isEnable = handState.isTracked && (!NRFrame.MonoMode || (NRFrame.MonoMode && m_ShowMeshInMonoMode));
+                m_HandMeshJoint.gameObject.SetActive(isEnable);
+                if (isEnable)
                 {
                     if (m_UpdateHandScale)
                         UpdateHandScale(handState);

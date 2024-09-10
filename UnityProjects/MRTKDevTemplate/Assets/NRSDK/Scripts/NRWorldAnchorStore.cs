@@ -132,7 +132,6 @@ namespace NRKernal.Persistence
                     var anchor = m_AnchorDict[anchorhandle];
 
                     anchor.CurrentTrackingState = m_NativeMapping.GetTrackingState(anchorhandle);
-                    anchor.CurrentAnchorState = m_NativeMapping.GetAnchorState(anchorhandle);
 
                     if (anchor.CurrentTrackingState == TrackingState.Tracking)
                     {
@@ -195,19 +194,11 @@ namespace NRKernal.Persistence
         /// <returns></returns>
         public NREstimateQuality UpdateMapQuality(NRWorldAnchor anchor, Pose pose)
         {
-            NRDebugger.Debug($"[{this.GetType()}] {nameof(UpdateMapQuality)} anchor {anchor.AnchorHandle} {anchor.CurrentAnchorState} pos {pose.position} rot{pose.rotation.eulerAngles}");
+            NRDebugger.Debug($"[{this.GetType()}] UpdateMapQuality anchor {anchor.AnchorHandle} {anchor.CurrentTrackingState} pos {pose.position} rot{pose.rotation.eulerAngles}");
 #if UNITY_EDITOR
             return NREstimateQuality.NR_ANCHOR_QUALITY_GOOD;
 #endif
             return m_NativeMapping.EstimateMapQuality(anchor.AnchorHandle, pose);
-        }
-
-        public NRAnchorState UpdateAnchorState(NRWorldAnchor anchor)
-        {
-#if UNITY_EDITOR
-            return NRAnchorState.NR_ANCHOR_STATE_SUCCESS;
-#endif
-            return m_NativeMapping.GetAnchorState(anchor.AnchorHandle);
         }
 
         public bool Remap(NRWorldAnchor anchor)
@@ -252,7 +243,7 @@ namespace NRKernal.Persistence
             foreach (var item in anchors)
             {
                 if (item.AnchorHandle == m_CreatingAnchorHandle || item.AnchorHandle == m_RemappingAnchorHandle)
-                    item.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_FAILURE;
+                    removeProcessingAnchorHandle(item.AnchorHandle);
                 else
                     item.CurrentTrackingState = TrackingState.Stopped;
             }
@@ -263,7 +254,7 @@ namespace NRKernal.Persistence
         /// </summary>
         /// <param name="anchor"> The NRWorldAnchor to be saved. </param>
         /// <returns> True if it succeeds, false if it fails. </returns>
-        public bool SaveAnchor(NRWorldAnchor anchor)
+        public bool SaveAnchor(NRWorldAnchor anchor, Action successCallback = null, Action failureCallback = null)
         {
             NRDebugger.Info("[NRWorldAnchorStore] Save Anchor: {0}", anchor.UserDefinedKey);
             if (m_Anchor2ObjectDict.ContainsKey(anchor.UUID))
@@ -289,6 +280,7 @@ namespace NRKernal.Persistence
 #endif
                     {
                         success = m_NativeMapping.SaveAnchor(anchor.AnchorHandle, Path.Combine(MapPath, anchor.UUID));
+                        removeProcessingAnchorHandle(anchor.AnchorHandle);
                     }
 
                     if (success)
@@ -296,6 +288,10 @@ namespace NRKernal.Persistence
                         m_Anchor2ObjectDict.Add(anchor.UUID, anchor.UserDefinedKey);
                         saveAnchor2ObjectFile();
                         OnNotifyMessage?.Invoke($"Save Anchor success {anchor.UUID}");
+                        MainThreadDispather.QueueOnMainThread(() =>
+                        {
+                            successCallback?.Invoke();
+                        });
                     }
                     else
                     {
@@ -304,6 +300,7 @@ namespace NRKernal.Persistence
                         {
                             NRDebugger.Info("[NRWorldAnchorStore] Save Anchor failed.");
                             InternalEraseAnchorWithUUID(anchor.UUID);
+                            failureCallback?.Invoke();
                         });
                     }
                 });
@@ -348,7 +345,7 @@ namespace NRKernal.Persistence
                 }
             );
 #endif
-            removeProcessingAnchorHandle(anchor.AnchorHandle, anchor.CurrentAnchorState);
+            removeProcessingAnchorHandle(anchor.AnchorHandle);
             GameObject.Destroy(anchor.gameObject);
             return true;
         }
@@ -428,30 +425,16 @@ namespace NRKernal.Persistence
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
-        /// <summary>
-        /// Clear CreatingAnchorHandle or RemappingHandle when mapping finishes.
-        /// </summary>
-        /// <param name="anchorHandle">Anchor Handle</param>
-        /// <param name="state">Anchor state</param>
-        public void handleProcessingFinish(ulong anchorHandle, NRAnchorState state)
-        {
-            if (state == NRAnchorState.NR_ANCHOR_STATE_SUCCESS
-                || state == NRAnchorState.NR_ANCHOR_STATE_FAILURE)
-            {
-                removeProcessingAnchorHandle(anchorHandle, state);
-            }
-        }
-
-        public void removeProcessingAnchorHandle(ulong anchorHandle, NRAnchorState state)
+        public void removeProcessingAnchorHandle(ulong anchorHandle)
         {
             if (m_CreatingAnchorHandle == anchorHandle)
             {
                 m_CreatingAnchorHandle = 0;
-                NRDebugger.Info($"[{this.GetType()}] {nameof(removeProcessingAnchorHandle)} creating {anchorHandle}:{state}");
+                NRDebugger.Info($"[{this.GetType()}] removeProcessingAnchorHandle creating {anchorHandle}");
             }
             if (m_RemappingAnchorHandle == anchorHandle)
             {
-                NRDebugger.Info($"[{this.GetType()}] {nameof(removeProcessingAnchorHandle)} remapping {anchorHandle}:{state}");
+                NRDebugger.Info($"[{this.GetType()}] removeProcessingAnchorHandle remapping {anchorHandle}");
                 m_RemappingAnchorHandle = 0;
             }
         }

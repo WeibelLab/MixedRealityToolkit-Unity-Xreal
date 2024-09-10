@@ -80,10 +80,16 @@ namespace NRKernal
                 currentGesture == HandGesture.Pinch;
         }
 
+        public HandGesture preGesture;
         public HandGesture currentGesture;
         public float confidence;
         public readonly Dictionary<HandJointID, Pose> jointsPoseDict = new Dictionary<HandJointID, Pose>();
 
+        public float pinchingTimer;
+        public float nonMovableTimer;//手势位置静止计时器
+        public Pose nonMovablePose;  //手势静止时Pose
+        public bool lockRotation;
+        public bool pinchNonMovable = false;
         public HandState(HandEnum handEnum)
         {
             this.handEnum = handEnum;

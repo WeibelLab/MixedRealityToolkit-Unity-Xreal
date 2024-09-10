@@ -22,6 +22,7 @@ namespace NRKernal
     internal delegate void OnGfxThreadSubmitCallback(UInt64 frameHandle);
     internal delegate void OnGfxThreadPopulateFrameCallback();
     internal delegate void OnDisplaySubSystemStartCallback(bool start);
+    internal delegate void OnInputSubSystemStartCallback(bool start);
 
     /// <summary> A controller for handling native glasses. </summary>
     internal partial class NativeXRPlugin
@@ -35,6 +36,11 @@ namespace NRKernal
         internal static void RegistDisplaySubSystemEventCallback(OnDisplaySubSystemStartCallback onStartCallback)
         {
             NativeApi.RegistDisplaySubSystemEventCallback(onStartCallback);
+        }
+
+        internal static void RegistInputSubSystemEventCallback(OnInputSubSystemStartCallback onStartCallback)
+        {
+            NativeApi.RegistInputSubSystemEventCallback(onStartCallback);
         }
 
         internal static void SetLogLevel(int logLevel)
@@ -73,6 +79,11 @@ namespace NRKernal
             return NativeApi.PopulateDisplayTexture((IntPtr)idTexture, multiPassEye);
         }
 
+        internal static bool GetIsHeadHeadPoseReady()
+        {
+            return NativeApi.GetIsHeadHeadPoseReady();
+        }
+
         internal static LostTrackingReason GetLostTrackingReason()
         {
             return NativeApi.GetLostTrackingReason();
@@ -98,7 +109,7 @@ namespace NRKernal
             return NativeApi.GetPerceptionGroupHandle();
         }
 
-        internal static void SwitchTrackingType(TrackingType type)
+        internal static void SwitchTrackingType(string type)
         {
             NativeApi.SwitchTrackingType(type);
         }
@@ -152,6 +163,9 @@ namespace NRKernal
             public extern static void RegistDisplaySubSystemEventCallback(OnDisplaySubSystemStartCallback onStartCallback);
 
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
+            public extern static void RegistInputSubSystemEventCallback(OnInputSubSystemStartCallback onStartCallback);
+
+            [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
             public static extern void SetLogLevel(int logLevel);
 
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
@@ -170,7 +184,8 @@ namespace NRKernal
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
             public static extern bool PopulateDisplayTexture(IntPtr idTexture, UInt32 multiPassEye);
 
-
+            [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
+            public static extern bool GetIsHeadHeadPoseReady();
 
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
             public static extern LostTrackingReason GetLostTrackingReason();
@@ -187,8 +202,8 @@ namespace NRKernal
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
             public static extern UInt64 GetPerceptionGroupHandle();
 
-            [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
-            public static extern void SwitchTrackingType(TrackingType type);
+            [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Ansi)]
+            public static extern void SwitchTrackingType(string type);
 
             [DllImport(NativeConstants.NRNativeXRPlugin, CharSet = CharSet.Auto)]
             public static extern UInt64 GetHeadTrackingHandle();

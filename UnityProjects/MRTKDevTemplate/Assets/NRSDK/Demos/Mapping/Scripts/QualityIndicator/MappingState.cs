@@ -6,8 +6,11 @@
 * https://www.xreal.com/        
 * 
 *****************************************************************************/
+using System;
+
 namespace NRKernal.Persistence
 {
+    [Obsolete()]
     public enum MappingState
     {
         MAPPING_STATE_UNKNOWN = 0,

@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace NRKernal.NRExamples
 {
     public class MeshClassificationFracking : MonoBehaviour, IMeshInfoProcessor
     {
+        static readonly string TAG = "MeshClassificationFracking";
         /// <summary>
         /// key: Mesh block Identifier
         /// value: Classified MeshFilters for this block
@@ -14,9 +16,11 @@ namespace NRKernal.NRExamples
         Dictionary<ulong, Dictionary<NRMeshingVertexSemanticLabel, MeshFilter>> m_ClassifiedMeshFilters = new Dictionary<ulong, Dictionary<NRMeshingVertexSemanticLabel, MeshFilter>>();
         /// <summary>
         /// key: Mesh block Identifier
-        /// valuse: Classified Meshes for this block
+        /// value: Classified Meshes for this block
         /// </summary>
         Dictionary<ulong, Dictionary<NRMeshingVertexSemanticLabel, Mesh>> m_ClassifiedMeshes = new Dictionary<ulong, Dictionary<NRMeshingVertexSemanticLabel, Mesh>>();
+
+        Dictionary<ulong, NRMeshInfo> m_MeshInfoDict = new Dictionary<ulong, NRMeshInfo>();
 
         /// <summary>
         /// List for all classified meshfilter prefabs
@@ -24,12 +28,12 @@ namespace NRKernal.NRExamples
         [SerializeField]
         private LabelMeshFilterPair[] m_ClassifiedMeshFilterPrefabs;
 
-        private NRMeshingVertexSemanticLabel[] m_AvailableLabels;
+        private NRMeshingVertexSemanticLabel[] m_AvailableLabels = null;
         public NRMeshingVertexSemanticLabel[] AvailableLabels
         {
             get
             {
-                if (m_AvailableLabels == null)
+                if (m_AvailableLabels == null || m_AvailableLabels.Length == 0)
                 {
                     m_AvailableLabels = new NRMeshingVertexSemanticLabel[m_ClassifiedMeshFilterPrefabs.Length];
                     for (int i = 0; i < m_ClassifiedMeshFilterPrefabs.Length; ++i)
@@ -47,7 +51,7 @@ namespace NRKernal.NRExamples
 
         public void ClearMeshInfo()
         {
-            NRDebugger.Info($"[{this.GetType()}] {nameof(ClearMeshInfo)} ");
+            NRDebugger.Info($"[{TAG}] ClearMeshInfo");
 
             ulong[] identifiers = m_ClassifiedMeshFilters.Keys.ToArray();
             foreach (var identifier in identifiers)
@@ -58,9 +62,14 @@ namespace NRKernal.NRExamples
 
         public void UpdateMeshInfo(ulong identifier, NRMeshInfo meshInfo)
         {
-            NRDebugger.Debug($"[{nameof(MeshClassificationFracking)}] {nameof(UpdateMeshInfo)} Begin");
-            string sample_UpdateMeshInfo = $"{nameof(UpdateMeshInfo)}";
+            NRDebugger.Debug($"[MeshClassificationFracking] UpdateMeshInfo Begin");
+            string sample_UpdateMeshInfo = $"UpdateMeshInfo";
             profile.BeginProfile(sample_UpdateMeshInfo);
+
+            lock (m_MeshInfoDict)
+            {
+                m_MeshInfoDict[identifier] = meshInfo;
+            }
 
             NRMeshingBlockState meshingBlockState = meshInfo.state;
             Mesh mesh = meshInfo.baseMesh;
@@ -82,9 +91,39 @@ namespace NRKernal.NRExamples
                     break;
             }
             profile.EndProfile(sample_UpdateMeshInfo);
-            NRDebugger.Info($"[{nameof(MeshClassificationFracking)}] {nameof(UpdateMeshInfo)} End");
-
+            NRDebugger.Info($"[MeshClassificationFracking] UpdateMeshInfo End");
         }
+
+        #region Save Mesh
+        public void Save()
+        {
+            if (m_SaveThread == null)
+            {
+                m_SaveThread = new Thread(SaveMeshThread);
+                m_SaveThread.Start();
+            }
+        }
+
+        private Thread m_SaveThread;
+        private void SaveMeshThread()
+        {
+            Dictionary<ulong, NRMeshInfo> meshInfoDictCopy;
+            lock (m_MeshInfoDict)
+            {
+                meshInfoDictCopy = new Dictionary<ulong, NRMeshInfo>();
+                foreach (var kvPair in m_MeshInfoDict)
+                {
+                    var handle = kvPair.Key;
+                    var meshInfo = kvPair.Value;
+                    {
+                        meshInfoDictCopy.Add(handle, meshInfo);
+                    }
+                }
+            }
+            MeshSaveUtility.Save(meshInfoDictCopy);
+            m_SaveThread = null;
+        }
+        #endregion
 
         private void HandleDeletedBlock(ulong identifier)
         {
@@ -102,13 +141,32 @@ namespace NRKernal.NRExamples
                 }
                 m_ClassifiedMeshFilters.Remove(identifier);
             }
+
+            if (m_ClassifiedMeshes.TryGetValue(identifier, out var meshes))
+            {
+                foreach (var kvpair in meshes)
+                {
+                    if (kvpair.Value != null)
+                    {
+                        Destroy(kvpair.Value);
+                    }
+                }
+                m_ClassifiedMeshes.Remove(identifier);
+            }
+
+            if (m_MeshInfoDict.TryGetValue(identifier, out var meshInfo))
+            {
+                Destroy(meshInfo.baseMesh);
+                m_MeshInfoDict.Remove(identifier);
+            }
+
             profile.EndProfile(sample_HandleDeletedBlock);
 
         }
 
         private void HandleUpdateBlock(ulong identifier, Mesh baseMesh, NRMeshingVertexSemanticLabel[] labels)
         {
-            string sample_HandleUpdateBlock = $"{nameof(HandleUpdateBlock)}";
+            string sample_HandleUpdateBlock = $"HandleUpdateBlock";
             profile.BeginProfile(sample_HandleUpdateBlock);
 
             if (!m_ClassifiedMeshFilters.TryGetValue(identifier, out Dictionary<NRMeshingVertexSemanticLabel, MeshFilter> filters))
@@ -117,7 +175,9 @@ namespace NRKernal.NRExamples
                 for (int i = 0; i < m_ClassifiedMeshFilterPrefabs.Length; ++i)
                 {
                     var pair = m_ClassifiedMeshFilterPrefabs[i];
-                    filters.Add(pair.label, pair.meshFilter == null ? null : Instantiate(pair.meshFilter));
+                    var filter = pair.meshFilter == null ? null : Instantiate(pair.meshFilter);
+                    filter.gameObject.name = $"{identifier}_{pair.label}";
+                    filters.Add(pair.label, filter);
                 }
                 m_ClassifiedMeshFilters.Add(identifier, filters);
             }
@@ -128,7 +188,10 @@ namespace NRKernal.NRExamples
                 for (int i = 0; i < AvailableLabels.Length; ++i)
                 {
                     var label = AvailableLabels[i];
-                    classifiedMeshes.Add(label, new Mesh());
+                    classifiedMeshes.Add(label, new Mesh()
+                    {
+                        name = $"{identifier}_{label}"
+                    });
                 }
 
                 m_ClassifiedMeshes.Add(identifier, classifiedMeshes);
@@ -153,7 +216,6 @@ namespace NRKernal.NRExamples
                     }
                 }
             }
-
             profile.EndProfile(sample_HandleUpdateBlock);
         }
 
@@ -196,9 +258,9 @@ namespace NRKernal.NRExamples
 
                 for (int j = 0; j < selectedLabels.Length; ++j)
                 {
+                    NRMeshingVertexSemanticLabel selectedLabel = selectedLabels[j];
                     try
                     {
-                        NRMeshingVertexSemanticLabel selectedLabel = selectedLabels[j];
                         var classifiedTriangles = s_LabelClassifiedTrianglesDict[selectedLabel];
                         classifiedTriangles.Add(idx_0);
                         classifiedTriangles.Add(idx_1);
@@ -206,7 +268,7 @@ namespace NRKernal.NRExamples
                     }
                     catch (System.Exception ex)
                     {
-                        NRDebugger.Warning($"[{nameof(MeshClassificationFracking)}] {ex.Message}");
+                        NRDebugger.Warning($"[{nameof(MeshClassificationFracking)}] {ex.Message} {selectedLabel}");
                     }
                 }
             }

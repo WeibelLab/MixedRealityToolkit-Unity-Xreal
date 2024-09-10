@@ -167,8 +167,9 @@ namespace NRKernal
 #else
             m_NativeHMD?.Start();
 #endif
-
+            NRDevice.OnSessionSpecialEvent?.Invoke(SessionSpecialEventType.HMDStarted);
 #endif
+            RegisGlassesControllerExtraCallbacks();
             NRDebugger.Info("[NRDeviceSubsystem] Started");
         }
 
@@ -193,11 +194,15 @@ namespace NRKernal
         [MonoPInvokeCallback(typeof(NRGlassesControlNotifyQuitAppCallback))]
         private static void OnGlassesDisconnectEvent(UInt64 glasses_control_handle, IntPtr user_data, GlassesDisconnectReason reason)
         {
+            NRDebugger.Info($"OnGlassesDisconnectEvent: m_IsGlassesPlugOut={m_IsGlassesPlugOut}, reason={reason}");
             if (m_IsGlassesPlugOut)
             {
                 return;
             }
-            m_IsGlassesPlugOut = true;
+            if(reason != GlassesDisconnectReason.NOTIFY_TO_QUIT_APP)
+            {
+                m_IsGlassesPlugOut = true;
+            }
             OnGlassesDisconnect?.Invoke(reason);
         }
 

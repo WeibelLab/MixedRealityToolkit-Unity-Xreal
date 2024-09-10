@@ -31,15 +31,8 @@ namespace NRKernal.Persistence
         private Text anchorState;
         [SerializeField]
         private Button remapBtn;
-        [SerializeField]
-        private ObserveRange m_ObserveRange;
         private NRWorldAnchor m_NRWorldAnchor;
         private Material m_Material;
-
-        #region properties
-        public float ObserveAngle => m_ObserveRange.Angle;
-        public NREstimateDistance ObserveDistance => m_ObserveRange.Distance;
-        #endregion
 
         void Start()
         {
@@ -67,7 +60,6 @@ namespace NRKernal.Persistence
                                 break;
                         }
                     };
-                    m_NRWorldAnchor.OnAnchorStateChanged += AnchorItem_OnAnchorStateChanged;
                 }
             }
         }
@@ -78,10 +70,6 @@ namespace NRKernal.Persistence
             {
                 return;
             }
-#if UNITY_EDITOR
-            mockAnchorState();
-#endif
-
             updateRemapButtonState();
 
         }
@@ -90,7 +78,7 @@ namespace NRKernal.Persistence
         {
             if (m_NRWorldAnchor != null)
             {
-                m_NRWorldAnchor.SaveAnchor();
+                m_NRWorldAnchor.SaveAnchor(OnSaveSuccess, OnSaveFailure);
             }
         }
 
@@ -124,6 +112,7 @@ namespace NRKernal.Persistence
                 if (m_NRWorldAnchor.Remap())
                 {
                     MapQualityIndicator.SetCurrentAnchor(m_NRWorldAnchor);
+                    MapQualityIndicator.ShowMappingGuide();
                 }
             }
         }
@@ -135,71 +124,36 @@ namespace NRKernal.Persistence
 
         private void updateRemapButtonState()
         {
-            if (NRWorldAnchorStore.Instance.IsRemapping)
+            if (MapQualityIndicator.CurrentAnchor != null)
             {
                 EnableRemapButton(false);
             }
             else
             {
-                if (m_MappingState == MappingState.MAPPING_STATE_REQUEST || m_MappingState == MappingState.MAPPING_STATE_REMAP_FAILURE)
-                {
-                    EnableRemapButton(true);
-                }
-                else
-                {
-                    EnableRemapButton(false);
-                }
+                EnableRemapButton(true);
             }
         }
 
-        private MappingState m_MappingState = MappingState.MAPPING_STATE_UNKNOWN;
-        private void AnchorItem_OnAnchorStateChanged(NRWorldAnchor anchor, MappingState state)
+        private void OnSaveSuccess()
         {
-            m_MappingState = state;
-            anchorState.text = $"{state}";
+            MapQualityIndicator.FinishMappingGuide();
         }
-
-        #region mock
-        private void mockAnchorState()
+        private void OnSaveFailure()
         {
-            if (m_NRWorldAnchor == null)
+            NRDebugger.Debug($"[LocalMapExample] Save anchor Failed  DestroyAnchor handle:{m_NRWorldAnchor.UUID}");
+            if (MapQualityIndicator.IsRemapping)
             {
-                return;
+                MapQualityIndicator.InterruptMappingGuide();
+                Toaster.Toast(PromptTexts.s_RemapPrompt, 12000);
             }
-
-            if (Input.GetKey(KeyCode.U))
+            else
             {
-                m_NRWorldAnchor.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_UNKNOWN;
-            }
-            else if (Input.GetKey(KeyCode.I))
-            {
-                if (NRWorldAnchorStore.Instance.CreatingAnchorHandle == m_NRWorldAnchor.AnchorHandle ||
-                    NRWorldAnchorStore.Instance.RemappingAnchorHandle == m_NRWorldAnchor.AnchorHandle)
-                {
-                    m_NRWorldAnchor.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_MAPPING;
-                }
-            }
-            else if (Input.GetKey(KeyCode.O))
-            {
-                if (NRWorldAnchorStore.Instance.CreatingAnchorHandle == m_NRWorldAnchor.AnchorHandle ||
-                    NRWorldAnchorStore.Instance.RemappingAnchorHandle == m_NRWorldAnchor.AnchorHandle)
-                {
-                    m_NRWorldAnchor.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_SUCCESS;
-                }
-            }
-            else if (Input.GetKey(KeyCode.P))
-            {
-                m_NRWorldAnchor.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_REQUEST;
-            }
-            else if (Input.GetKey(KeyCode.J))
-            {
-                if (NRWorldAnchorStore.Instance.CreatingAnchorHandle == m_NRWorldAnchor.AnchorHandle ||
-                    NRWorldAnchorStore.Instance.RemappingAnchorHandle == m_NRWorldAnchor.AnchorHandle)
-                {
-                    m_NRWorldAnchor.CurrentAnchorState = NRAnchorState.NR_ANCHOR_STATE_FAILURE;
-                }
+                m_NRWorldAnchor.DestroyAnchor();
+                MapQualityIndicator.InterruptMappingGuide();
+                Toaster.Toast(PromptTexts.s_ReAddPrompt, 12000);
             }
         }
+
 
         [SerializeField]
         private ConfirmDialog m_GuideDialog;
@@ -208,23 +162,5 @@ namespace NRKernal.Persistence
             m_GuideDialog.Show();
             await m_GuideDialog.WaitUntilClosed();
         }
-        #endregion
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [Serializable]
-    public class ObserveRange
-    {
-        /// <summary>
-        /// The angle between the leftmost ray and the rightmost ray
-        /// casted from the anchor to the observer in degree.
-        /// </summary>
-        public float Angle;
-        /// <summary>
-        /// The maximum distance between the observer and the anchor.
-        /// </summary>
-        public NREstimateDistance Distance;
     }
 }

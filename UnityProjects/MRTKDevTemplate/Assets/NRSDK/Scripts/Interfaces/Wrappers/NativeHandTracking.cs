@@ -183,9 +183,11 @@ namespace NRKernal
             NativeErrorListener.Check(result, this, "NRHandTrackingDataGetHandsCount");
 
             rightHand.isTracked = false;
+            rightHand.preGesture = rightHand.currentGesture;
             rightHand.currentGesture = HandGesture.None;
 
             leftHand.isTracked = false;
+            leftHand.preGesture = leftHand.currentGesture;
             leftHand.currentGesture = HandGesture.None;
 
             for (int i = 0; i < hand_count; i++)

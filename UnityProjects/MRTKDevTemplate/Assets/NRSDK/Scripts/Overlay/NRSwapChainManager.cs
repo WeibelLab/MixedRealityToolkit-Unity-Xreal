@@ -150,7 +150,7 @@ namespace NRKernal
         }
 
         private Camera m_ShadowCamera;
-        
+
         private NRDisplayOverlay m_LeftDisplayOverlay;
         internal NRDisplayOverlay leftDisplayOverlay
         {
@@ -210,7 +210,7 @@ namespace NRKernal
             get;
         } = false;
 
-
+        private Coroutine m_RenderCoroutine;
         public void Create()
         {
             NRDebugger.Info("[SwapChain] Create");
@@ -226,7 +226,7 @@ namespace NRKernal
                 NRRenderer = gameObject.AddComponent<NRRenderer>();
             NRRenderer.Create();
 #endif
-            StartCoroutine(RenderCoroutine());
+            m_RenderCoroutine = StartCoroutine(RenderCoroutine());
 #endif
         }
 
@@ -271,11 +271,11 @@ namespace NRKernal
                     for (int i = 0; i < overlays.Length; i++)
                         Destroy(overlays[i]);
                 }
-                
+
                 var leftOverlay = centerCamera.gameObject.AddComponent<NRDisplayOverlay>();
                 leftOverlay.targetDisplay = NativeDevice.LEFT_DISPLAY;
                 m_LeftDisplayOverlay = leftOverlay;
-                
+
                 var rightOverlay = centerCamera.gameObject.AddComponent<NRDisplayOverlay>();
                 rightOverlay.targetDisplay = NativeDevice.RIGHT_DISPLAY;
                 m_RightDisplayOverlay = rightOverlay;
@@ -426,7 +426,7 @@ namespace NRKernal
                 doPopulate = m_MonoDisplayOverlay != null && camera == m_MonoDisplayOverlay.renderCamera;
             else
                 doPopulate = m_LeftDisplayOverlay != null && camera == m_LeftDisplayOverlay.renderCamera;
-            
+
             if (doPopulate)
                 PopulateFrame();
         }
@@ -712,9 +712,14 @@ namespace NRKernal
             return false;
         }
 
+        [SerializeField]
+        // In this mode, if a protected layer has existed in history, we will always work in protected mode, even if the protected layer has been destroyed.
+        private bool protectContentPersistentMode = false;
+        private bool protectContentFirstBlood = false;
         private bool useProtectContent = false;
         private void UpdateProtectContentSetting()
         {
+#if !UNITY_EDITOR && UNITY_ANDROID
             bool flag = false;
             for (int i = 0; i < Overlays.Count; i++)
             {
@@ -722,18 +727,23 @@ namespace NRKernal
                 if (overlay.isProtectedContent)
                 {
                     flag = true;
+                    protectContentFirstBlood = true;
                     break;
                 }
             }
 
-            if (flag != useProtectContent)
+            if (protectContentPersistentMode)
+                NRRenderer.NativeRenderring.SetPersistentProtect(protectContentPersistentMode);
+
+            bool needUseProtectContent = protectContentPersistentMode ? protectContentFirstBlood : flag;
+            if (needUseProtectContent != useProtectContent)
             {
-                NRDebugger.Info("[SwapChain] Protect content setting changed.");
+                NRDebugger.Info("[SwapChain] Protect content setting changed, protectContentPersistentMode={0}, firstBlood={1}, flag={2}.", protectContentPersistentMode, protectContentFirstBlood, flag);
                 try
                 {
                     AndroidJavaClass cls_UnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
                     var unityActivity = cls_UnityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-                    if (flag)
+                    if (needUseProtectContent)
                     {
                         NRDebugger.Info("[SwapChain] Use protect content.");
                         ProtectedCodec.Call("start", unityActivity);
@@ -748,9 +758,9 @@ namespace NRKernal
                 {
                     throw e;
                 }
-
-                useProtectContent = flag;
+                useProtectContent = needUseProtectContent;
             }
+#endif
         }
 
         private void PrintOverlayInfo()
@@ -1088,8 +1098,19 @@ namespace NRKernal
 
         public void Destroy()
         {
+            NRDebugger.Info("[NRSwapChainManager] Destroy");
+            if (m_RenderCoroutine != null)
+            {
+                StopCoroutine(m_RenderCoroutine);
+                m_RenderCoroutine = null;
+            }
+            DestroyDisplayOverlay();
             Overlays.Clear();
             NRRenderer?.Destroy();
+            m_FrameHandle = 0;
+            m_CachFrameHandle = 0;
+            protectContentFirstBlood = false;
+            UpdateProtectContentSetting();
             started = false;
         }
 

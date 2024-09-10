@@ -23,6 +23,7 @@ namespace NRKernal
         private MeshFilter m_MeshFilter;
         private Mesh m_PlaneMesh;
         private Vector3[] m_Corners;
+        private Vector3 m_MeshScale;
 
         private int[] Triangles = new int[6] {
             0,1,2,0,2,3
@@ -53,14 +54,16 @@ namespace NRKernal
                 m_Corners = new Vector3[4];
             }
 
-            m_Camera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), m_Camera.farClipPlane - 100, Camera.MonoOrStereoscopicEye.Mono, m_Corners);
+            m_Camera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), 1, Camera.MonoOrStereoscopicEye.Mono, m_Corners);
+            m_MeshScale = m_Corners[2] - m_Corners[0];
+            m_MeshScale.z = 1;
             for (int i = 0; i < m_Corners.Length; i++)
             {
-                m_Corners[i] = m_Camera.transform.TransformPoint(m_Corners[i]);
+                m_Corners[i] = m_Camera.transform.TransformPoint(m_Corners[i] * (m_Camera.farClipPlane - 100));
             }
 
             Vector3 center = (m_Corners[0] + m_Corners[2]) * 0.5f;
-            DrawBackGroundMesh(new Pose(center, m_Camera.transform.rotation), m_Corners);
+            DrawBackGroundMesh(new Pose(center, m_Camera.transform.rotation));
         }
 
         public void EnableARBackgroundRendering(bool updatemesh = true)
@@ -90,19 +93,30 @@ namespace NRKernal
             }
         }
 
+        public void SetMesh(Mesh mesh)
+        {
+            m_PlaneMesh = mesh;
+            if (m_MeshFilter != null)
+            {
+                m_MeshFilter.mesh = m_PlaneMesh;
+            }
+        }
+
         /// <summary> Draw from center. </summary>
         /// <param name="centerPose"> The center pose.</param>
-        /// <param name="vectors">    The vectors.</param>
-        private void DrawBackGroundMesh(Pose centerPose, Vector3[] vectors)
+        private void DrawBackGroundMesh(Pose centerPose)
         {
-            if (vectors == null || vectors.Length < 3)
-            {
-                return;
-            }
-
             if (m_PlaneMesh == null)
             {
                 m_PlaneMesh = new Mesh();
+                Vector3[] vertices3D = new Vector3[4];
+                vertices3D[0] = new Vector3(-0.5f, -0.5f);
+                vertices3D[1] = new Vector3(-0.5f, 0.5f);
+                vertices3D[2] = new Vector3(0.5f, 0.5f);
+                vertices3D[3] = new Vector3(0.5f, -0.5f);
+                m_PlaneMesh.vertices = vertices3D;
+                m_PlaneMesh.triangles = Triangles;
+                m_PlaneMesh.uv = UV;
             }
 
             if (m_Renderer == null)
@@ -116,80 +130,11 @@ namespace NRKernal
             m_Renderer.transform.position = centerPose.position;
             m_Renderer.transform.rotation = centerPose.rotation;
 
-            Vector3[] vertices3D = new Vector3[vectors.Length];
-            for (int i = 0; i < vectors.Length; i++)
-            {
-                vertices3D[i] = m_Renderer.transform.InverseTransformPoint(vectors[i]);
-            }
-
-            m_PlaneMesh.vertices = vertices3D;
-            m_PlaneMesh.triangles = Triangles;
-            m_PlaneMesh.uv = UV;
+            float distance = Vector3.Distance(m_Renderer.transform.position, m_Camera.transform.position);
+            m_Renderer.transform.localScale = distance * m_MeshScale;
 
             m_MeshFilter.mesh = m_PlaneMesh;
             m_Renderer.material = m_Material;
         }
     }
-
-    //[RequireComponent(typeof(Camera))]
-    //public class NRBackGroundRender : MonoBehaviour
-    //{
-    //    /// <summary> A material used to render the AR background image. </summary>
-    //    [Tooltip("A material used to render the AR background image.")]
-    //    public Material BackgroundMaterial;
-    //    private Camera m_Camera;
-    //    private CameraClearFlags m_CameraClearFlags = CameraClearFlags.Skybox;
-    //    private CommandBuffer m_CommandBuffer = null;
-
-    //    private void OnEnable()
-    //    {
-    //        if (BackgroundMaterial == null)
-    //        {
-    //            NRDebugger.Error("[NRBackGroundRender] Material is null...");
-    //            return;
-    //        }
-    //        m_Camera = GetComponent<Camera>();
-    //        EnableARBackgroundRendering();
-    //    }
-
-    //    private void OnDisable()
-    //    {
-    //        DisableARBackgroundRendering();
-    //    }
-
-    //    public void SetMaterial(Material mat)
-    //    {
-    //        BackgroundMaterial = mat;
-    //    }
-
-    //    private void EnableARBackgroundRendering()
-    //    {
-    //        if (BackgroundMaterial == null || m_Camera == null)
-    //        {
-    //            return;
-    //        }
-
-    //        m_CameraClearFlags = m_Camera.clearFlags;
-    //        m_Camera.clearFlags = CameraClearFlags.Depth;
-
-    //        m_CommandBuffer = new CommandBuffer();
-    //        m_CommandBuffer.Blit(null, BuiltinRenderTextureType.CameraTarget, BackgroundMaterial);
-
-    //        m_Camera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, m_CommandBuffer);
-    //        m_Camera.AddCommandBuffer(CameraEvent.BeforeGBuffer, m_CommandBuffer);
-    //    }
-
-    //    private void DisableARBackgroundRendering()
-    //    {
-    //        if (m_CommandBuffer == null || m_Camera == null)
-    //        {
-    //            return;
-    //        }
-
-    //        m_Camera.clearFlags = m_CameraClearFlags;
-
-    //        m_Camera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_CommandBuffer);
-    //        m_Camera.RemoveCommandBuffer(CameraEvent.BeforeGBuffer, m_CommandBuffer);
-    //    }
-    //}
 }

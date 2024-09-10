@@ -64,7 +64,14 @@ namespace NRKernal
         public override void Destroy()
         {
             NRDebugger.Info("[VirtualController] Destroy");
-            m_VirtualDisplayFragment.Call("destroy");
+            try
+            {
+                m_VirtualDisplayFragment.Call("destroy");
+            }
+            catch (Exception ex)
+            {
+                NRDebugger.Warning("[VirtualController] Destroy fragment exception: {0}", ex.Message);
+            }
         }
 
         public override void RegistFragment(AndroidJavaObject unityActivity, ISystemButtonDataProxy proxy)

@@ -7,6 +7,8 @@
 * 
 *****************************************************************************/
 
+using AOT;
+using System;
 using UnityEngine;
 
 namespace NRKernal
@@ -26,14 +28,14 @@ namespace NRKernal
 #if UNITY_EDITOR
             m_NativeHandTracking = new NREmulatorHandTracking();
 #else
-            EnableHandTracking();
             m_NativeHandTracking = new NativeHandTracking(NRSessionManager.Instance.NativeAPI);
 #endif
         }
 
         public override int ControllerCount { get { return 2; } }
 
-
+        /// <summary> True to need recenter. </summary>
+        private bool[] m_NeedRecenter = new bool[2];
         /// <summary> Update the controller. </summary>
         public override void Update()
         {
@@ -49,15 +51,47 @@ namespace NRKernal
             }
         }
 
+        /// <summary> Start the controller. </summary>
+        public override void Start()
+        {
+            base.Start();
+            EnableHandTracking(true);
+            NRSessionManager.Instance.NRHMDPoseTracker.OnModeChanged += OnTrackingModeChanged;
+        }
+
         public override void Resume()
         {
             base.Resume();
-            EnableHandTracking();
+            EnableHandTracking(true);
+            //NRSessionManager.Instance.NRHMDPoseTracker.OnModeChanged += OnTrackingModeChanged;
         }
 
-        private void EnableHandTracking()
+        public override void Pause()
         {
-            NRSessionManager.Instance.NativeAPI.Configuration.SetHandTrackingEnabled(true);
+            base.Pause();
+            EnableHandTracking(false);
+            //NRSessionManager.Instance.NRHMDPoseTracker.OnModeChanged -= OnTrackingModeChanged;
+        }
+        /// <summary> Stop the controller. </summary>
+        public override void Stop()
+        {
+            base.Stop();
+
+            EnableHandTracking(false);
+            NRSessionManager.Instance.NRHMDPoseTracker.OnModeChanged -= OnTrackingModeChanged;
+        }
+
+        private void OnTrackingModeChanged(NRHMDPoseTracker.TrackingModeChangedResult result)
+        {
+            NRDebugger.Info("[NRHandControllerProvider] OnTrackingModeChanged: {0}", result.success);
+            EnableHandTracking(true);
+        }
+
+        private void EnableHandTracking(bool enable)
+        {
+#if !UNITY_EDITOR
+            NRSessionManager.Instance.NativeAPI.Configuration.SetHandTrackingEnabled(enable);
+#endif
         }
 
         private HandState GetHandState(int index)
@@ -86,6 +120,22 @@ namespace NRKernal
             {
                 stateParser.ParserControllerState(states[index]);
             }
+
+            if (m_NeedRecenter[index])
+            {
+                states[index].recentered = true;
+                m_NeedRecenter[index] = false;
+            }
+        }
+
+        public override void Recenter(int index)
+        {
+            base.Recenter(index);
+            if (index < ControllerCount)
+            {
+                m_NeedRecenter[index] = true;
+            }
+            
         }
     }
 }

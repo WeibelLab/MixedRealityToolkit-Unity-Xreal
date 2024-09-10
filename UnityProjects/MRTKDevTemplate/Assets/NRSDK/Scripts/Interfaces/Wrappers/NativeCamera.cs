@@ -188,7 +188,19 @@ namespace NRKernal
             m_NativeCameraHandle = 0;
             return result == NativeResult.Success;
         }
+        public NativeVector2f ProjectPoint(NativeVector3f worldPoint)
+        {
+            var result = NativeApi.NRRGBCameraProjectPoint(m_NativeCameraHandle, ref worldPoint, out NativeVector2f out_ImagePoint);
+            NativeErrorListener.Check(result, this, "ProjectPoint");
+            return out_ImagePoint;
+        }
 
+        public NativeVector3f UnProjectPoint(NativeVector2f imagePoint)
+        {
+            var result = NativeApi.NRRGBCameraUnProjectPoint(m_NativeCameraHandle, ref imagePoint, out NativeVector3f out_WorldPoint);
+            NativeErrorListener.Check(result, this, "ProjectPoint");
+            return out_WorldPoint;
+        }
         /// <summary> A native api. </summary>
         private struct NativeApi
         {
@@ -269,6 +281,30 @@ namespace NRKernal
             [DllImport(NativeConstants.NRNativeLibrary)]
             public static extern NativeResult NRRGBCameraImageDestroy(UInt64 rgb_camera_handle,
                 UInt64 rgb_camera_image_handle);
+
+            /// <summary>
+            /// Projects a 3d world point in the RGB camera space to a 2d pixel in the image space.
+            /// </summary>
+            /// <param name="rgb_camera_handle">The handle of RGB camera object.</param>
+            /// <param name="world_point">The 3d world point in the RGB camera space.</param>
+            /// <param name="out_image_point">The 2d pixel in the image space.</param>
+            /// <returns></returns>
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            public static extern NativeResult NRRGBCameraProjectPoint(UInt64 rgb_camera_handle,
+                ref NativeVector3f world_point,
+                out NativeVector2f out_image_point);
+
+            /// <summary>
+            /// Unprojects a 2d pixel in the image space to a 3d world point in homogenous coordinate.
+            /// </summary>
+            /// <param name="rgb_camera_handle">The handle of RGB camera object.</param>
+            /// <param name="image_point">The 2d pixel in the image space.</param>
+            /// <param name="out_world_point">The 3d world point in the RGB camera space.</param>
+            /// <returns></returns>
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            public static extern NativeResult NRRGBCameraUnProjectPoint(UInt64 rgb_camera_handle,
+                ref NativeVector2f image_point,
+                out NativeVector3f out_world_point);
         };
     }
 }

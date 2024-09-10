@@ -25,6 +25,13 @@ namespace NRKernal
         private byte[] m_RawData;
         public byte[] RawData { get { return m_RawData; } }
 
+        internal NRRgbCamera RGBCamera
+        {
+            get
+            {
+                return NativeCameraProxy as NRRgbCamera;
+            }
+        }
         /// <summary> Default constructor. </summary>
         public NRRGBCamTexture() : base(CameraImageFormat.RGB_888)
         {

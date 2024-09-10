@@ -15,7 +15,7 @@ namespace NRKernal.NREditor
 
     /// <summary> Editor for nr trackable image. </summary>
     [CanEditMultipleObjects, CustomEditor(typeof(NRTrackableImageBehaviour))]
-    public class NRTrackableImageEditor : Editor
+    public class NRTrackableImageEditor : UnityEditor.Editor
     {
         /// <summary> The serialized object. </summary>
         private NRSerializedImageTarget m_SerializedObj;

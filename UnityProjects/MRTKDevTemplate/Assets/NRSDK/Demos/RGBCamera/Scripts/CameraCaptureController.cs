@@ -6,11 +6,9 @@
  * https://www.xreal.com/
  *
  *****************************************************************************/
-
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-
 namespace NRKernal.NRExamples
 {
     /// <summary> A controller for handling camera captures. </summary>
@@ -21,6 +19,12 @@ namespace NRKernal.NRExamples
         public RawImage CaptureImage;
         /// <summary> Number of frames. </summary>
         public Text FrameCount;
+
+        [SerializeField]
+        RawImagePixelPicker m_RawImagePixelPicker;
+        [SerializeField]
+        Text m_ProjectionInfo;
+
         /// <summary> Gets or sets the RGB camera texture. </summary>
         /// <value> The RGB camera texture. </value>
         private NRRGBCamTexture RGBCamTexture { get; set; }
@@ -46,7 +50,7 @@ namespace NRKernal.NRExamples
         }
 
         /// <summary> Plays this object. </summary>
-        public void Play()
+        public virtual void Play()
         {
             if (!NRDevice.Subsystem.IsFeatureSupported(NRSupportedFeature.NR_FEATURE_RGB_CAMERA))
                 throw new Exception("RGBCamera is not supported on current glasses.");
@@ -61,6 +65,27 @@ namespace NRKernal.NRExamples
             // The origin texture will be destroyed after call "Stop",
             // Rebind the texture.
             CaptureImage.texture = RGBCamTexture.GetTexture();
+
+            if (m_RawImagePixelPicker != null)
+            {
+                m_RawImagePixelPicker.OnRawImageClick += OnRawImageClick;
+            }
+        }
+
+        private void OnRawImageClick(Vector2 textureCoord)
+        {
+            var imagePoint = new NativeVector2f
+            {
+                X = textureCoord.x,
+                Y = textureCoord.y
+            };
+
+            var worldPoint = RGBCamTexture.RGBCamera.NativeRGBCamera.UnProjectPoint(imagePoint);
+
+            var projectPoint = RGBCamTexture.RGBCamera.NativeRGBCamera.ProjectPoint(worldPoint);
+
+            m_ProjectionInfo.text = $"unproject: imagePoint={imagePoint} worldPoint={worldPoint}\n" +
+                $"project: worldPoint={worldPoint} imagePoint={projectPoint}";
         }
 
         /// <summary> Pauses this object. </summary>
@@ -98,6 +123,17 @@ namespace NRKernal.NRExamples
         {
             RGBCamTexture?.Stop();
             RGBCamTexture = null;
+        }
+
+        protected void Validate(ProjectionValidater validator)
+        {
+            if(RGBCamTexture!= null)
+            {
+                validator.ProjectPointFunc = RGBCamTexture.RGBCamera.NativeRGBCamera.ProjectPoint;
+                validator.UnProjectPointFunc = RGBCamTexture.RGBCamera.NativeRGBCamera.UnProjectPoint;
+                validator.StartValidate("rgb_project.csv", "rgb_unproject.csv", "rgb_test_results.csv");
+                NRDebugger.Info($"[RGBCameraProjection] Validate Finish");
+            }
         }
     }
 }

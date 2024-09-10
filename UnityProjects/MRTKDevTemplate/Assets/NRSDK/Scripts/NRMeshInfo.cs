@@ -9,9 +9,10 @@
 
 namespace NRKernal
 {
+    using System;
     using UnityEngine;
 
-    public class NRMeshInfo
+    public struct NRMeshInfo
     {
         /// <summary>
         /// The mesh identifier.

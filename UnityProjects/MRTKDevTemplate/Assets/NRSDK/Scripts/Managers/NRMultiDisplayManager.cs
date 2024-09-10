@@ -28,6 +28,7 @@ namespace NRKernal
             // Use the customise virtualdisplay if find one.
             if (m_VirtualDisplayer != null)
             {
+                NRSessionManager.Instance.VirtualDisplayer = m_VirtualDisplayer;
                 return;
             }
 

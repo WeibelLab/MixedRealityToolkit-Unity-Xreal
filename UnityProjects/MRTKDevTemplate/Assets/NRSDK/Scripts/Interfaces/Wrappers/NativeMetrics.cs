@@ -12,6 +12,16 @@ namespace NRKernal
     using System;
     using System.Runtime.InteropServices;
 
+    /// Supported features for the meshing system.
+    internal enum NRMetricsFeature
+    {
+        NR_METRICS_FEATURE_NULL = 0,
+        /// Report tearing frame count in one second. Default is disabled, be careful to enable this feature as it needs extra cpu or gpu cost.
+        NR_METRICS_FEATURE_EXTENDED_TEARING_COUNT = 1,
+        /// Render back color on screen. Default is disabled, be careful to enable this feature as it needs extra cpu or gpu cost.
+        NR_METRICS_FEATURE_EXTENDED_RENDER_BACK_COLOR = 2,
+    };
+    
     /// <summary>
     /// Metrics's Native API.
     /// </summary>
@@ -57,7 +67,7 @@ namespace NRKernal
             return frameCount;
         }
 
-        /// <summary>Get the number of extended frame count. This indicates the number of extended frame count used when predict frame present time. </summary>
+        /// <summary> Get the number of extended frame count. This indicates the number of extended frame count used when predict frame present time. </summary>
         /// <returns> The number of extended frame count. </returns>
         public uint GetExtendedFrameCount()
         {
@@ -71,6 +81,22 @@ namespace NRKernal
             return extraFrameCount;
         }
 
+        /// <summary> Get the number of screen tears in one second. This reports when ATW takes too long and experience a screen tear. </summary>
+        /// <returns> The number of screen tears in one second. </returns>
+        public uint GetTearedFrameCount()
+        {
+            if (m_MetricsHandle == 0)
+            {
+                return 0u;
+            }
+            uint frameCount = 0;
+            var result = NativeApi.NRMetricsGetTearedFrameCount(m_MetricsHandle, ref frameCount);
+            NativeErrorListener.Check(result, this, "GetTearedFrameCount");
+            return frameCount;
+        }
+
+        /// <summary> Get the number of early finished frames in one second. This indicates the number of frames delivered before they were needed. </summary>
+        /// <returns> The number of early frames in one second. </returns>
         public uint GetEarlyFrameCount()
         {
             if (m_MetricsHandle == 0)
@@ -83,6 +109,9 @@ namespace NRKernal
             return frameCount;
         }
 
+
+        /// <summary> Get the number of dropped frames in one second. This indicates the number of times a frame wasn’t delivered on time, and the previous frame was used in ATW instead. </summary>
+        /// <returns> The number of early frames in one second. </returns>
         public uint GetDroppedFrameCount()
         {
             if (m_MetricsHandle == 0)
@@ -95,6 +124,9 @@ namespace NRKernal
             return frameCount;
         }
 
+
+        /// <summary> Get the app frame latency(in nanosecond). This is the absolute time between when an app queries the pose before rendering and the time the frame is displayed on the HMD screen. </summary>
+        /// <returns> The app frame latency. </returns>
         public ulong GetAppFrameLatency()
         {
             if (m_MetricsHandle == 0)
@@ -107,6 +139,9 @@ namespace NRKernal
             return latency;
         }
 
+
+        /// <summary> Get the frame count of presenting on screen per second. </summary>
+        /// <returns> The fps of presenting on screen. </returns>
         public uint GetPresentFps()
         {
             if (m_MetricsHandle == 0)
@@ -119,6 +154,9 @@ namespace NRKernal
             return presentFPS;
         }
 
+
+        /// <summary> Stop this object. </summary>
+        /// <returns> True if it succeeds, false if it fails. </returns>
         public bool Stop()
         {
             if (m_MetricsHandle == 0)
@@ -131,6 +169,9 @@ namespace NRKernal
             return result == NativeResult.Success;
         }
 
+
+        /// <summary> Destroy this object. </summary>
+        /// <returns> True if it succeeds, false if it fails. </returns>
         public bool Destroy()
         {
             if (m_MetricsHandle == 0)
@@ -172,6 +213,19 @@ namespace NRKernal
             return result == NativeResult.Success;
         }
 
+        public bool EnableFeature(NRMetricsFeature feature, bool enable)
+        {
+            if (m_MetricsHandle == 0)
+            {
+                return false;
+            }
+
+            var result = NativeApi.NRMetricsSetFeatureEnable(m_MetricsHandle, feature, enable ? 1 : 0);
+            NativeErrorListener.Check(result, this, "EnableFeature");
+            return result == NativeResult.Success;
+            
+        }
+
         private partial struct NativeApi
         {
             /// <summary> Create the Metrics object. </summary>
@@ -189,8 +243,8 @@ namespace NRKernal
             [DllImport(NativeConstants.NRNativeLibrary)]
             public static extern NativeResult NRMetricsGetExtendedFrameCount(UInt64 metrics_handle, ref uint extended_frame_count);
 
-            // [DllImport(NativeConstants.NRNativeLibrary)]
-            // public static extern NativeResult NRMetricsGetTearedFrameCount(UInt64 metrics_handle, ref uint teared_frame_count);
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            public static extern NativeResult NRMetricsGetTearedFrameCount(UInt64 metrics_handle, ref uint teared_frame_count);
 
             [DllImport(NativeConstants.NRNativeLibrary)]
             public static extern NativeResult NRMetricsGetEarlyFrameCount(UInt64 metrics_handle, ref uint early_frame_count);
@@ -218,6 +272,10 @@ namespace NRKernal
 
             [DllImport(NativeConstants.NRNativeLibrary)]
             public static extern NativeResult NRMetricsResume(UInt64 metrics_handle);
+
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            public static extern NativeResult NRMetricsSetFeatureEnable( UInt64 metrics_handle, NRMetricsFeature feature, int state);
+
         }
     }
 }

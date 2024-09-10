@@ -53,8 +53,8 @@ namespace NRKernal
         /// <summary> Updates this object. </summary>
         public abstract void Update();
     
-        /// <summary> Destroy the controller. </summary>
-        public virtual void Destroy()
+        /// <summary> Stop the controller. </summary>
+        public virtual void Stop()
         {
             running = false;
         }
@@ -68,5 +68,7 @@ namespace NRKernal
 
         /// <summary> Recenters this object. </summary>
         public virtual void Recenter() { }
+
+        public virtual void Recenter(int index) { }
     }
 }

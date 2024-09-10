@@ -20,7 +20,10 @@ namespace NRKernal
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
-
+#if UNITY_URP
+    using UnityEngine.Rendering;
+    using UnityEngine.Rendering.Universal;
+#endif
     /// <summary> A nr virtual displayer. </summary>
     [HelpURL("https://developer.xreal.com/develop/unity/customize-phone-controller")]
     [ScriptOrder(NativeConstants.NRVIRTUALDISPLAY_ORDER)]
@@ -69,6 +72,7 @@ namespace NRKernal
 #if UNITY_EDITOR
         private static RenderTexture m_ControllerScreen;
 #endif
+        private NRPhoneScreenProviderBase m_ReplaycePhoneScreen;
 
         private NRDisplaySubsystem m_Subsystem;
         public NRDisplaySubsystem Subsystem
@@ -83,17 +87,37 @@ namespace NRKernal
         /// <summary> True if is initialize, false if not. </summary>
         private bool m_IsInitialized = false;
 
+#if UNITY_EDITOR
+        private int m_ScreenWidth;
+#endif
         protected override void Awake() {
             base.Awake();
             if (isDirty) return;
-            
-            Debug.Log("[NRVirtualDisplayer] Awake");
+
+            NRDebugger.Info("[NRVirtualDisplayer] Awake");
             NRSessionManager.Instance.VirtualDisplayer = this;
+#if UNITY_EDITOR
+            m_ScreenWidth = Screen.width;
+#endif
+#if UNITY_URP
+            if (m_UICamera != null && GraphicsSettings.currentRenderPipeline != null)
+            {
+#if UNITY_2019
+                m_UICamera.stereoTargetEye = StereoTargetEyeMask.None;
+#elif UNITY_2020 || UNITY_2020_1_OR_NEWER
+                m_UICamera.GetUniversalAdditionalCameraData().allowXRRendering = false;
+#endif
+            }
+#endif
         }
 
         public void StartDisplay()
         {
-            if (m_IsInitialized) return;
+            if (m_IsInitialized)
+            {
+                NRSessionManager.Instance.VirtualDisplayer = this;
+                return;
+            }
             if (isDirty) return;
 
             NRDebugger.Info("[NRVirtualDisplayer] Start.");
@@ -116,7 +140,9 @@ namespace NRKernal
                 else
                 {
                     NRDebugger.Info("[NRVirtualDisplayer] Use replayced phone sceen provider.");
-                    this.BindVirtualDisplayProvider(phoneScreenReplayceTool.CreatePhoneScreenProvider());
+                    if (m_ReplaycePhoneScreen == null)
+                        m_ReplaycePhoneScreen = phoneScreenReplayceTool.CreatePhoneScreenProvider();
+                    this.BindVirtualDisplayProvider(m_ReplaycePhoneScreen);
                 }
             }
             else
@@ -167,6 +193,11 @@ namespace NRKernal
             {
                 m_VirtualController.gameObject.SetActive(NRInput.EmulateVirtualDisplayInEditor);
             }
+            if (Screen.width != m_ScreenWidth)
+            {
+                m_ScreenWidth = Screen.width;
+                UpdateResolution(new Vector2(Screen.width, NRPhoneScreen.Resolution.y));
+            }
 #endif
 
         }
@@ -187,6 +218,7 @@ namespace NRKernal
             m_ControllerScreen?.Release();
             m_ControllerScreen = null;
 #endif
+            m_IsInitialized = false;
         }
 
         /// <summary> If m_VirtualController is null, use android native 

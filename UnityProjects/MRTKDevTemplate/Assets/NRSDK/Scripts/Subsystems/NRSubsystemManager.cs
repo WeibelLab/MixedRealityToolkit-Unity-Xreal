@@ -9,7 +9,9 @@
 
 namespace NRKernal
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Gives access to subsystems.
@@ -18,15 +20,19 @@ namespace NRKernal
     /// </summary>
     public static class NRSubsystemManager
     {
-        private static List<ISubsystemDescriptor> supportedDescriptors = new List<ISubsystemDescriptor>()
+        private static List<ISubsystemDescriptor> supportedDescriptors = new List<ISubsystemDescriptor>();
+        static NRSubsystemManager()
         {
-            new NRTrackingSubsystemDescriptor(),
-            new NRTrackableSubsystemDescriptor(),
-            new NRTrackableImageSubsystemDescriptor(),
-            new NRPlaneSubsystemDescriptor(),
-            new NRDeviceSubsystemDescriptor(),
-            new NRDisplaySubsystemDescriptor(),
-        };
+            var type = typeof(ISubsystemDescriptor);
+            var descriptorList = AppDomain.CurrentDomain.GetAssemblies()
+                            .SelectMany(x => x.GetTypes())
+                            .Where(x => x.IsClass && type.IsAssignableFrom(x) && !x.ContainsGenericParameters && !x.IsAbstract);
+            foreach (var item in descriptorList)
+            {
+                ISubsystemDescriptor subsystem = Activator.CreateInstance(item) as ISubsystemDescriptor;
+                supportedDescriptors.Add(subsystem);
+            }
+        }
 
         /// <summary>
         /// Gets all of the currently known subsystem descriptors regardless of specific subsystem type.
@@ -80,7 +86,7 @@ namespace NRKernal
 
             foreach (var descriptor in supportedDescriptors)
             {
-                if (typeof(TDescriptor).Equals(descriptor.GetType()))
+                if (descriptor is TDescriptor)
                 {
                     descriptors.Add((TDescriptor)descriptor);
                 }

@@ -48,6 +48,9 @@ namespace NRKernal
         public TrackablePlaneType GetPlaneType(UInt64 trackable_handle)
         {
             TrackablePlaneType plane_type = TrackablePlaneType.INVALID;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return plane_type;
+
             NativeApi.NRTrackablePlaneGetType(m_NativeInterface.PerceptionHandle, trackable_handle, ref plane_type);
             return plane_type;
         }
@@ -58,6 +61,9 @@ namespace NRKernal
         public Pose GetCenterPose(UInt64 trackable_handle)
         {
             Pose pose = Pose.identity;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return pose;
+            
             NativeMat4f center_native_pos = NativeMat4f.identity;
             NativeApi.NRTrackablePlaneGetCenterPose(m_NativeInterface.PerceptionHandle, trackable_handle, ref center_native_pos);
             ConversionUtility.ApiPoseToUnityPose(center_native_pos, out pose);
@@ -70,6 +76,9 @@ namespace NRKernal
         public float GetExtentX(UInt64 trackable_handle)
         {
             float extent_x = 0;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return extent_x;
+
             NativeApi.NRTrackablePlaneGetExtentX(m_NativeInterface.PerceptionHandle, trackable_handle, ref extent_x);
             return extent_x;
         }
@@ -80,6 +89,9 @@ namespace NRKernal
         public float GetExtentZ(UInt64 trackable_handle)
         {
             float extent_z = 0;
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return extent_z;
+
             NativeApi.NRTrackablePlaneGetExtentZ(m_NativeInterface.PerceptionHandle, trackable_handle, ref extent_z);
             return extent_z;
         }
@@ -87,6 +99,9 @@ namespace NRKernal
         public void GetBoundaryPolygon(UInt64 trackable_handle, List<Vector3> polygonList)
         {
             polygonList.Clear();
+            if (m_NativeInterface.PerceptionHandle == 0)
+                return;
+
             int polygon_size = 0;
             NativeApi.NRTrackablePlaneGetPolygonSize(m_NativeInterface.PerceptionHandle, trackable_handle, ref polygon_size);
             int size = polygon_size / 2;

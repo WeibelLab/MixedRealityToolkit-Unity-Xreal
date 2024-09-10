@@ -15,7 +15,7 @@ namespace NRKernal.NRExamples
 {
 #if UNITY_EDITOR
     [CustomEditor(typeof(MeshObjGenerator))]
-    public class MeshObjGeneratorInspector : Editor
+    public class MeshObjGeneratorInspector : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
@@ -33,9 +33,10 @@ namespace NRKernal.NRExamples
                             StreamReader sr = File.OpenText(file.FullName);
                             string meshData = sr.ReadToEnd();
                             sr.Close();
-                            Mesh mesh = MeshSaver.StringToMesh(meshData);
+                            Mesh mesh = MeshSaveUtility.StringToMesh(meshData);
                             ulong.TryParse(file.Name.Substring(0, file.Name.IndexOf(".")), out ulong identifier);
-                            (serializedObject.targetObject as IMeshInfoProcessor).UpdateMeshInfo(identifier, new NRMeshInfo { 
+                            (serializedObject.targetObject as IMeshInfoProcessor).UpdateMeshInfo(identifier, new NRMeshInfo
+                            {
                                 baseMesh = mesh,
                                 state = NRMeshingBlockState.NR_MESHING_BLOCK_STATE_NEW
                             });

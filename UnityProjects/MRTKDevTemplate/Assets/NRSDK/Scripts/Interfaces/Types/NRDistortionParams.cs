@@ -8,6 +8,7 @@
 *****************************************************************************/
 
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace NRKernal
 {
@@ -18,14 +19,13 @@ namespace NRKernal
         NR_CAMERA_MODEL_RADIAL = 1,
         /// <summary> An enum constant representing the nr camera model fisheye option. </summary>
         NR_CAMERA_MODEL_FISHEYE = 2,
-        /// <summary> An enum constant representing the nr camera model fisheye624 option. </summary>
-        NR_CAMERA_MODEL_FISHEYE624 = 3,
+        /// <summary> An enum constant representing the nr camera model fisheye_rttp option. </summary>
+        NR_CAMERA_MODEL_FISHEYE_RTTP = 3,
     }
 
     /// <summary>
-    ///     if camera_model == NR_CAMERA_MODEL_RADIAL,the first 4 value of distortParams is:
-    /// // radial_k1、radial_k2、radial_r1、radial_r2. // else if camera_model ==
-    /// NR_CAMERA_MODEL_FISHEYE: // fisheye_k1、fisheye_k2、fisheye_k3、fisheye_k4. </summary>
+    /// Camera distortion parameters
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct NRDistortionParams
     {
@@ -40,8 +40,20 @@ namespace NRKernal
         /// <returns> A string that represents this object. </returns>
         public override string ToString()
         {
-            return string.Format("cameraModel:{0} distortParams0:{1} distortParams1:{2} distortParams2:{3} distortParams3:{4} distortParams4:{5} distortParams5:{6} distortParams6:{7}",
-                cameraModel, distortParams[0], distortParams[1], distortParams[2], distortParams[3], distortParams[4], distortParams[5], distortParams[6]);
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"cameraModel:{cameraModel} ");
+            if (distortParams != null)
+            {
+                for (int i = 0; i < distortParams.Length; ++i)
+                {
+                    sb.Append($"distortParams{i}:{distortParams[i]} ");
+                }
+            }
+            else
+            {
+                sb.Append("distortParams:null");
+            }
+            return sb.ToString();
         }
     }
 }

@@ -33,7 +33,8 @@ namespace NRKernal
 
         /// <summary> Dictionary contains the result of GetBlockInfoData. </summary>
         private Dictionary<ulong, BlockInfo> m_BlockInfos = new Dictionary<ulong, BlockInfo>();
-
+        /// <summary> Dictionary contains BlockMeshes. {blockIdentifiler:Mesh}</summary>
+        private Dictionary<ulong, Mesh> m_BlockMeshes = new Dictionary<ulong, Mesh>();
         public NativeMeshing(NativeInterface nativeInterface)
         {
             m_NativeInterface = nativeInterface;
@@ -180,24 +181,38 @@ namespace NRKernal
             foreach (var item in m_BlockInfos)
             {
                 uint vertexCount = 0;
-                var result = NativeApi.NRMeshingBlockGetVertexCount(PerceptionHandle, item.Key, ref vertexCount);
+                ulong blockHandle = item.Key;
+                ulong blockIdentifier = item.Value.identifier;
+                NRMeshingBlockState blockState = item.Value.blockState;
+
+                if(blockState == NRMeshingBlockState.NR_MESHING_BLOCK_STATE_DELETED)
+                {
+                    if(m_BlockMeshes.TryGetValue(blockIdentifier, out Mesh blockMesh))
+                    {
+                        blockMesh.Clear();
+                        UnityEngine.Object.Destroy(blockMesh);
+                        m_BlockMeshes.Remove(blockIdentifier);
+                    }
+                }
+
+                var result = NativeApi.NRMeshingBlockGetVertexCount(PerceptionHandle, blockHandle, ref vertexCount);
                 NRDebugger.Debug("[NativeMeshing] NRBlockDetailGetVertexCount result: {0} vertexCount: {1}.", result, vertexCount);
                 if (vertexCount != 0)
                 {
                     NativeVector3f[] outVertices = new NativeVector3f[vertexCount];
-                    result = NativeApi.NRMeshingBlockGetVertices(PerceptionHandle, item.Key, outVertices);
+                    result = NativeApi.NRMeshingBlockGetVertices(PerceptionHandle, blockHandle, outVertices);
                     NRDebugger.Debug("[NativeMeshing] NRBlockDetailGetVertices result: {0}.", result);
                     NativeVector3f[] outNormals = new NativeVector3f[vertexCount];
-                    result = NativeApi.NRMeshingBlockGetNormals(PerceptionHandle, item.Key, outNormals);
+                    result = NativeApi.NRMeshingBlockGetNormals(PerceptionHandle, blockHandle, outNormals);
                     NRDebugger.Debug("[NativeMeshing] NRBlockDetailGetNormals result: {0}.", result);
                     NRMeshingVertexSemanticLabel[] outLabels = new NRMeshingVertexSemanticLabel[vertexCount];
-                    result = NativeApi.NRMeshingBlockGetLabels(PerceptionHandle, item.Key, outLabels);
+                    result = NativeApi.NRMeshingBlockGetLabels(PerceptionHandle, blockHandle, outLabels);
                     NRDebugger.Debug("[NativeMeshing] NRMeshingBlockGetLabels result: {0}.", result);
                     uint indexCount = 0;
-                    result = NativeApi.NRMeshingBlockGetIndexCount(PerceptionHandle, item.Key, ref indexCount);
+                    result = NativeApi.NRMeshingBlockGetIndexCount(PerceptionHandle, blockHandle, ref indexCount);
                     NRDebugger.Debug("[NativeMeshing] NRBlockDetailGetIndexCount result: {0} indexCount: {1}.", result, indexCount);
                     uint[] outIndex = new uint[indexCount];
-                    result = NativeApi.NRMeshingBlockGetIndeices(PerceptionHandle, item.Key, outIndex);
+                    result = NativeApi.NRMeshingBlockGetIndeices(PerceptionHandle, blockHandle, outIndex);
                     NRDebugger.Debug("[NativeMeshing] NRBlockDetailGetIndeices result: {0}.", result);
 
                     Vector3[] vertices = new Vector3[vertexCount];
@@ -212,25 +227,24 @@ namespace NRKernal
                     {
                         triangles[j] = (int)outIndex[j];
                     }
-                    Mesh mesh = new Mesh
+                    if(!m_BlockMeshes.TryGetValue(blockIdentifier, out Mesh mesh))
                     {
-                        vertices = vertices,
-                        normals = normals,
-                        triangles = triangles
-                    };
-                    
-                    mesh.RecalculateBounds();
+                        mesh = new Mesh();
+                        mesh.name = $"{blockIdentifier}";
+                        m_BlockMeshes[blockIdentifier] = mesh;
+                    }
+                    InternalUpdateMesh(mesh, vertices, normals, triangles);
 
                     NRMeshInfo meshInfo = new NRMeshInfo { 
-                        identifier = item.Value.identifier,
-                        state = item.Value.blockState,
+                        identifier = blockIdentifier,
+                        state = blockState,
                         baseMesh = mesh,
                         labels = outLabels
                     };
                     action?.Invoke(meshInfo.identifier, meshInfo);
-                    NRDebugger.Debug("[NativeMeshing] GetMeshDetailData Invoke: {0} {1} {2}.", item.Value.identifier, item.Value.blockState, mesh.vertexCount);
+                    NRDebugger.Debug("[NativeMeshing] GetMeshDetailData Invoke: {0} {1} {2}.", blockIdentifier, blockState, mesh.vertexCount);
                 }
-                result = NativeApi.NRMeshingBlockDestroy(PerceptionHandle, item.Key);
+                result = NativeApi.NRMeshingBlockDestroy(PerceptionHandle, blockHandle);
                 NRDebugger.Debug("[NativeMeshing] NRBlockDetailDestroy result: {0}.", result);
                 yield return null;
             }
@@ -256,6 +270,15 @@ namespace NRKernal
             NRDebugger.Debug("[NativeMeshing] NRPerceptionObjectListDestroy.");
             m_MeshBlockListHandle = 0;
             return result == NativeResult.Success;
+        }
+
+        private static void InternalUpdateMesh(Mesh mesh, Vector3[] vertices, Vector3[] normals, int[] triangles)
+        {
+            mesh.Clear();
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
         }
 
         private partial struct NativeApi

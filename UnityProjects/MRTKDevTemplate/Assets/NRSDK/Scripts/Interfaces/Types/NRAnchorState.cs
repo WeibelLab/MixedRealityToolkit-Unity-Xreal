@@ -7,8 +7,11 @@
 * 
 *****************************************************************************/
 
+using System;
+
 namespace NRKernal
 {
+    [Obsolete()]
     public enum NRAnchorState
     {
         NR_ANCHOR_STATE_UNKNOWN = 0,

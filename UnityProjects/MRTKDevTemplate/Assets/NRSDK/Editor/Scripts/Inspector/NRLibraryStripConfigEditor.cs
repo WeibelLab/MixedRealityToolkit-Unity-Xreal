@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -13,7 +13,7 @@ using System.IO;
 namespace NRKernal
 {
     [CustomEditor(typeof(NRLibraryStripConfig))]
-    public class NRLibraryStripConfigEditor : Editor
+    public class NRLibraryStripConfigEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {

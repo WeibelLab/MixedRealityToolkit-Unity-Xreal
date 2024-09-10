@@ -183,6 +183,12 @@ namespace NRKernal
             UpdatePoseByTrackingType();
         }
 
+        public void ChangeStartTrackingType(TrackingType mode)
+        {
+            NRDebugger.Info("[NRHMDPoseTracker] start trackingType = {0}", mode);
+            m_TrackingType = mode;
+        }
+
         /// <summary> Auto adaption for current working trackingType based on supported feature on current device. </summary>
         public void AutoAdaptTrackingType()
         {
@@ -255,7 +261,7 @@ namespace NRKernal
             {
                 //Thread.Sleep(20);
                 NRDebugger.Info("[NRHMDPoseTracker] Beg ChangeMode: {0} => {1}", m_TrackingType, trackingtype);
-                result.success = NRSessionManager.Instance.TrackingSubSystem.SwitchTrackingType(trackingtype);
+                result.success = NRSessionManager.Instance.TrackingSubSystem.SwitchTrackingType(GetTrackingSubsystemDescriptor(trackingtype));
 
                 if (result.success)
                 {
@@ -273,6 +279,52 @@ namespace NRKernal
             OnModeChanged?.Invoke(result);
 #endif
             return true;
+        }
+
+        internal static IntegratedSubsystemDescriptor GetTrackingSubsystemDescriptor(TrackingType trackingtype)
+        {
+            List<ITrackingSubsystemDescriptor> trackings = new List<ITrackingSubsystemDescriptor>();
+            NRSubsystemManager.GetSubsystemDescriptors(trackings);
+            switch (trackingtype)
+            {
+                case TrackingType.Tracking6Dof:
+                    foreach (var tracking in trackings)
+                    {
+                        if (tracking is NR6DOFTrackingSubsystemDescriptor)
+                        {
+                            return tracking as IntegratedSubsystemDescriptor;
+                        }
+                    }
+                    break;
+                case TrackingType.Tracking3Dof:
+                    foreach (var tracking in trackings)
+                    {
+                        if (tracking is NR3DOFTrackingSubsystemDescriptor)
+                        {
+                            return tracking as IntegratedSubsystemDescriptor;
+                        }
+                    }
+                    break;
+                case TrackingType.Tracking0Dof:
+                    foreach (var tracking in trackings)
+                    {
+                        if (tracking is NR0DOFTrackingSubsystemDescriptor)
+                        {
+                            return tracking as IntegratedSubsystemDescriptor;
+                        }
+                    }
+                    break;
+                case TrackingType.Tracking0DofStable:
+                    foreach (var tracking in trackings)
+                    {
+                        if (tracking is NR0DOFStabTrackingSubsystemDescriptor)
+                        {
+                            return tracking as IntegratedSubsystemDescriptor;
+                        }
+                    }
+                    break;
+            }
+            return null;
         }
 
         private void OnApplicationPause(bool pause)

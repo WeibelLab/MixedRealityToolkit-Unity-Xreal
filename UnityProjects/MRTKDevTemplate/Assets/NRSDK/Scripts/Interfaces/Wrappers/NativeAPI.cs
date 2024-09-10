@@ -22,7 +22,7 @@ namespace NRKernal
 
 #if UNITY_ANDROID
         /// <summary> Create NRAPI on android platform. </summary>
-        internal static void Create(IntPtr unityActivity)
+        public static void Create(IntPtr unityActivity)
         {
             if (m_ApiHandler != 0)
                 return;
@@ -46,39 +46,60 @@ namespace NRKernal
         }
 #endif
 
+        /// <summary>
+        /// Set sdk license data
+        /// </summary>
+        /// <param name="license_data"> license data. </param>
+        /// <returns></returns>
+        internal static bool InitSetLicenseData(byte[] license_data)
+        {
+            if (m_ApiHandler != 0 && license_data != null && license_data.Length > 0)
+            {
+                Int32 data_len = license_data.Length;
+                NativeResult result = NativeApi.NRAPIInitSetLicenseData(m_ApiHandler, license_data, data_len);
+                NativeErrorListener.Check(result, m_ApiHandler, "NRAPIInitSetLicenseData", true);
+                return result == NativeResult.Success;
+            }
+            return false;
+        }
+
         /// <summary> Get the version information of SDK. </summary>
         /// <returns> The version. </returns>
         internal static string GetVersion()
         {
             NRVersion version = new NRVersion();
-            NativeApi.NRGetVersion(m_ApiHandler, ref version);
+            NativeResult result = NativeApi.NRGetVersion(m_ApiHandler, ref version);
+            NativeErrorListener.Check(result, m_ApiHandler, "NRGetVersion");
             return version.ToString();
         }
 
         /// <summary> Start NRAPI. </summary>
-        internal static void Start()
+        public static void Start()
         {
             if (m_ApiHandler != 0)
             {
-                NativeApi.NRAPIStart(m_ApiHandler);
+                NativeResult result = NativeApi.NRAPIStart(m_ApiHandler);
+                NativeErrorListener.Check(result, m_ApiHandler, "NRAPIStart", true);
             }
         }
 
         /// <summary> Stop NRAPI. </summary>
-        internal static void Stop()
+        public static void Stop()
         {
             if (m_ApiHandler != 0)
             {
-                NativeApi.NRAPIStop(m_ApiHandler);
+                NativeResult result = NativeApi.NRAPIStop(m_ApiHandler);
+                NativeErrorListener.Check(result, m_ApiHandler, "NRAPIStop", false);
             }
         }
 
         /// <summary> Destroy NRAPI. </summary>
-        internal static void Destroy()
+        public static void Destroy()
         {
             if (m_ApiHandler != 0)
             {
-                NativeApi.NRAPIDestroy(m_ApiHandler);
+                NativeResult result = NativeApi.NRAPIDestroy(m_ApiHandler);
+                NativeErrorListener.Check(result, m_ApiHandler, "NRAPIDestroy", false);
                 m_ApiHandler = 0;
             }
         }
@@ -93,6 +114,16 @@ namespace NRKernal
             [DllImport(NativeConstants.NRNativeLibrary)]
             internal static extern NativeResult NRAPICreate(ref UInt64 out_api_handle);
 #endif
+
+            /// <summary>
+            /// Set sdk license data.
+            /// </summary>
+            /// <param name="api_handle"> sdk handle. </param>
+            /// <param name="license_data"> license data. </param>
+            /// <param name="data_len"> license data length. </param>
+            /// <returns></returns>
+            [DllImport(NativeConstants.NRNativeLibrary)]
+            internal static extern NativeResult NRAPIInitSetLicenseData(UInt64 api_handle, byte[] license_data, Int32 data_len);
 
             /// <summary> Get the version information of SDK. </summary>
             /// <param name="out_version"> [in,out] The version information as NRVersion.</param>

@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -79,6 +79,12 @@ namespace NRKernal
         public static string ScreenCaptureDenyErrorTip = "Screen capture needs to be approved.";
         public static string RGBCameraDeviceNotFindErrorTip = "Please check the FAQ on the official website to enable the RGB Camera.";
         public static string UnSupportedHandtrackingCalculationErrorTip = "The device in use does not support hand tracking calculation.";
+        /// <summary> The error tip of license expired. </summary>
+        public static string LicenseExpiredErrorTip = "License has expired.";
+        /// <summary> The error tip of license not support devices. </summary>
+        public static string LicenseNotSupportCurrentDevice = "License not support current device.";
+        /// <summary> The error tip of license not support features. </summary>
+        public static string LicenseNotSupportRequestedFeature = "License not support requested feature.";
         #endregion
 
         /// <summary> The notification level warning. </summary>

@@ -540,7 +540,7 @@ in dropdown list of Player Settings > Other Settings > Color Space, choose 'Line
 
             public override void Fix()
             {
-                ShellHelper.RunCommand("chmod", $"755 {CliBinaryPath}");
+                ShellHelper.RunCommand("chmod", $"755 \"{CliBinaryPath}\"");
             }
 
             public override bool IsFixable()
@@ -550,7 +550,7 @@ in dropdown list of Player Settings > Other Settings > Color Space, choose 'Line
 
             public override bool IsValid()
             {
-                ShellHelper.RunCommand("ls", $"-l {CliBinaryPath}", out string output, out string error);
+                ShellHelper.RunCommand("ls", $"-l \"{CliBinaryPath}\"", out string output, out string error);
                 return output.Contains("-rwxr-xr-x");
             }
         }

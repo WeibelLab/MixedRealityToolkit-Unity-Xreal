@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
 * Copyright 2019 Xreal Techonology Limited. All rights reserved.
 *                                                                                                                                                          
 * This file is part of NRSDK.                                                                                                          
@@ -31,7 +31,7 @@ namespace NRKernal
         }
 
         /// <summary> The hits. </summary>
-        private static readonly RaycastHit[] hits = new RaycastHit[64];
+        protected static readonly RaycastHit[] hits = new RaycastHit[64];
 
         /// <summary> Type of the mask. </summary>
         public MaskTypeEnum maskType = MaskTypeEnum.Exclusive;
@@ -54,7 +54,7 @@ namespace NRKernal
         /// <summary> The break points. </summary>
         protected readonly List<Vector3> breakPoints = new List<Vector3>();
         /// <summary> Temporary raycast results. </summary>
-        private readonly List<RaycastResult> temporaryRaycastResults = new List<RaycastResult>();
+        protected readonly List<RaycastResult> temporaryRaycastResults = new List<RaycastResult>();
 
         /// <summary> The related hand. </summary>
         private ControllerHandEnum m_RelatedHand;
@@ -75,14 +75,14 @@ namespace NRKernal
 
         /// <summary> Gets the break points. </summary>
         /// <value> The break points. </value>
-        public List<Vector3> BreakPoints { get { return breakPoints; } }
+        public virtual List<Vector3> BreakPoints { get { return breakPoints; } }
         /// <summary> Gets information describing the hover event. </summary>
         /// <value> Information describing the hover event. </value>
-        public NRPointerEventData HoverEventData { get { return buttonEventDataList.Count > 0 ? buttonEventDataList[0] : null; } }
+        public virtual NRPointerEventData HoverEventData { get { return buttonEventDataList.Count > 0 ? buttonEventDataList[0] : null; } }
         /// <summary> Gets a list of button event data. </summary>
         /// <value> A list of button event data. </value>
         private ReadOnlyCollection<NRPointerEventData> readonlyButtonEventDataList;
-        public ReadOnlyCollection<NRPointerEventData> ButtonEventDataList 
+        public virtual ReadOnlyCollection<NRPointerEventData> ButtonEventDataList 
         {
             get
             {
@@ -174,12 +174,13 @@ namespace NRKernal
         /// <returns> The scroll delta. </returns>
         public virtual Vector2 GetScrollDelta()
         {
-            return Vector2.zero;
+            //return Vector2.zero;
+            return NRInput.GetDeltaTouch();
         }
 
         /// <summary> First raycast result. </summary>
         /// <returns> A RaycastResult. </returns>
-        public RaycastResult FirstRaycastResult()
+        public virtual RaycastResult FirstRaycastResult()
         {
             for (int i = 0, imax = sortedRaycastResults.Count; i < imax; ++i)
             {
@@ -194,7 +195,7 @@ namespace NRKernal
         /// <param name="ray">            The ray.</param>
         /// <param name="distance">       The distance.</param>
         /// <param name="raycastResults"> The raycast results.</param>
-        public void Raycast(Ray ray, float distance, List<RaycastResult> raycastResults)
+        public virtual void Raycast(Ray ray, float distance, List<RaycastResult> raycastResults)
         {
             temporaryRaycastResults.Clear();
             if (enablePhysicsRaycast)

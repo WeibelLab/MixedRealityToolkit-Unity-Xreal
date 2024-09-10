@@ -29,8 +29,6 @@ namespace NRKernal.Persistence
         /// <summary> Event queue for all listeners interested in OnTrackingChanged events. </summary>
         public event OnTrackingChangedDelegate OnTrackingChanged;
 
-        public event Action<NRWorldAnchor, MappingState> OnAnchorStateChanged;
-
         /// <summary> State of the tracking. </summary>
         private TrackingState m_TrackingState = TrackingState.Stopped;
         public TrackingState CurrentTrackingState
@@ -42,21 +40,6 @@ namespace NRKernal.Persistence
                 {
                     m_TrackingState = value;
                     OnTrackingChanged?.Invoke(this, m_TrackingState);
-                }
-            }
-        }
-
-        private NRAnchorState m_AnchorState = NRAnchorState.NR_ANCHOR_STATE_UNKNOWN;
-        public NRAnchorState CurrentAnchorState
-        {
-            get { return m_AnchorState; }
-            set
-            {
-                if (m_AnchorState != value)
-                {
-                    m_AnchorState = value;
-                    OnAnchorStateChanged?.Invoke(this, toMappingState(m_AnchorState));
-                    NRWorldAnchorStore.Instance.handleProcessingFinish(AnchorHandle, m_AnchorState);
                 }
             }
         }
@@ -86,6 +69,7 @@ namespace NRKernal.Persistence
             return NRWorldAnchorStore.Instance.CreateAnchor(this);
         }
 
+        [Obsolete()]
         public bool SetEstimateRange(float angle, NREstimateDistance distance)
         {
             return NRWorldAnchorStore.Instance.SetEstimateRange(AnchorHandle, angle, distance);
@@ -100,9 +84,9 @@ namespace NRKernal.Persistence
         /// Save the anchor to the disk
         /// </summary>
         /// <returns> return true if successful </returns>
-        public bool SaveAnchor()
+        public bool SaveAnchor(Action successCallback, Action failureCallback)
         {
-            return NRWorldAnchorStore.Instance.SaveAnchor(this);
+            return NRWorldAnchorStore.Instance.SaveAnchor(this, successCallback, failureCallback);
         }
 
         /// <summary>
@@ -135,28 +119,6 @@ namespace NRKernal.Persistence
         {
             NRDebugger.Info($"[{this.GetType().Name}] {nameof(UpdatePose)} {this.UUID} {pose}");
             transform.SetPositionAndRotation(pose.position, pose.rotation);
-        }
-
-        private MappingState toMappingState(NRAnchorState state)
-        {
-            if (state != NRAnchorState.NR_ANCHOR_STATE_FAILURE)
-            {
-                return (MappingState)((int)(state));
-            }
-            if (this.AnchorHandle == NRWorldAnchorStore.Instance.RemappingAnchorHandle)
-            {
-                return MappingState.MAPPING_STATE_REMAP_FAILURE;
-            }
-            if (this.AnchorHandle == NRWorldAnchorStore.Instance.CreatingAnchorHandle)
-            {
-                return MappingState.MAPPING_STATE_NEW_FAILURE;
-            }
-            else
-            {
-                NRDebugger.Error($"[{this.GetType()}] {nameof(toMappingState)} not excepted state: {state} for anchor {AnchorHandle}");
-            }
-
-            return MappingState.MAPPING_STATE_NEW_FAILURE;
         }
     }
 }

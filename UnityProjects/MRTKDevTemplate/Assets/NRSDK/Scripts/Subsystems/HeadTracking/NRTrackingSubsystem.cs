@@ -7,11 +7,37 @@
 * 
 *****************************************************************************/
 
+using System;
+
 namespace NRKernal
 {
     public class NRTrackingSubsystemDescriptor : IntegratedSubsystemDescriptor<NRTrackingSubsystem>
     {
         public const string Name = "Subsystem.Tracking";
+        public override string id => Name;
+    }
+
+    public class NR6DOFTrackingSubsystemDescriptor : IntegratedSubsystemDescriptor<NRTrackingSubsystem>, ITrackingSubsystemDescriptor
+    {
+        public static readonly string Name = "nr_perception_head_tracking_6dof";
+        public override string id => Name;
+    }
+
+    public class NR3DOFTrackingSubsystemDescriptor : IntegratedSubsystemDescriptor<NRTrackingSubsystem>, ITrackingSubsystemDescriptor
+    {
+        public static readonly string Name = "nr_perception_head_tracking_3dof";
+        public override string id => Name;
+    }
+
+    public class NR0DOFTrackingSubsystemDescriptor : IntegratedSubsystemDescriptor<NRTrackingSubsystem>, ITrackingSubsystemDescriptor
+    {
+        public static readonly string Name = "nr_perception_head_tracking_0dof";
+        public override string id => Name;
+    }
+
+    public class NR0DOFStabTrackingSubsystemDescriptor : IntegratedSubsystemDescriptor<NRTrackingSubsystem>, ITrackingSubsystemDescriptor
+    {
+        public static readonly string Name = "nr_perception_head_tracking_eis";
         public override string id => Name;
     }
 
@@ -52,6 +78,11 @@ namespace NRKernal
             m_Provider.Destroy();
         }
 
+        public void RegistInputSubSystemEventCallback(Action<bool> callback)
+        {
+            m_Provider.RegistInputSubSystemEventCallback(callback);
+        }
+
         public bool GetFramePresentHeadPose(ref UnityEngine.Pose pose, ref LostTrackingReason lostReason, ref ulong timestamp)
         {
             return m_Provider.GetFramePresentHeadPose(ref pose, ref lostReason, ref timestamp);
@@ -72,14 +103,14 @@ namespace NRKernal
             return m_Provider.GetHMDTimeNanos();
         }
 
-        public bool InitTrackingType(TrackingType type)
+        public bool InitTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
-            return m_Provider.InitTrackingType(type);
+            return m_Provider.InitTrackingType(descriptor);
         }
 
-        public bool SwitchTrackingType(TrackingType type)
+        public bool SwitchTrackingType(IntegratedSubsystemDescriptor descriptor)
         {
-            return m_Provider.SwitchTrackingType(type);
+            return m_Provider.SwitchTrackingType(descriptor);
         }
 
         public void Recenter()

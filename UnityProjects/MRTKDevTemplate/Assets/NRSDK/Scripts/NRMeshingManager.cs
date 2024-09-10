@@ -63,20 +63,34 @@ namespace NRKernal
             {
                 if (result.success)
                 {
-                    if (m_NativeMeshing != null)
-                    {
-                        m_NativeMeshing.DestroyMeshInfo();
-                        m_NativeMeshing = null;
-                        foreach (var processor in m_MeshInfoProcessors)
-                            processor.ClearMeshInfo();
-                    }
+                    StopMeshing();
                     StartMeshing();
                 }
             };
             StartMeshing();
         }
+        private void OnEnable()
+        {
+            StartMeshing();
+        }
+        private void OnDisable()
+        {
+            StopMeshing();
+        }
 
-        void StartMeshing()
+        public void StopMeshing()
+        {
+            if (m_NativeMeshing != null)
+            {
+                m_NativeMeshing.DestroyMeshInfo();
+                m_NativeMeshing = null;
+                foreach (var processor in m_MeshInfoProcessors)
+                    processor.ClearMeshInfo();
+                DisableMeshing();
+            }
+        }
+
+        public void StartMeshing()
         {
             if (NRSessionManager.Instance.NRHMDPoseTracker.TrackingMode == TrackingType.Tracking6Dof)
             {
@@ -111,24 +125,22 @@ namespace NRKernal
         }
 
         /// <summary>
-        /// Enables meshing functionality when the application resumes.
-        /// </summary>
-        /// <param name="pause"> Enables meshing functionality when the application resumes. </param>
-        void OnApplicationPause(bool pause)
-        {
-            if (!pause)
-            {
-                EnableMeshing();
-            }
-        }
-
-        /// <summary>
         /// Enable the meshing functionality.
         /// </summary>
         private void EnableMeshing()
         {
 #if !UNITY_EDITOR
             NRSessionManager.Instance.NativeAPI.Configuration.SetMeshingEnabled(true);
+#endif
+        }
+
+        /// <summary>
+        /// Enable the meshing functionality.
+        /// </summary>
+        private void DisableMeshing()
+        {
+#if !UNITY_EDITOR
+            NRSessionManager.Instance.NativeAPI.Configuration.SetMeshingEnabled(false);
 #endif
         }
 
@@ -165,7 +177,7 @@ namespace NRKernal
         {
             foreach (var processor in m_MeshInfoProcessors)
             {
-                NRDebugger.Debug($"[{this.GetType()}] {nameof(ProcessMeshDetail)} {processor.GetType()} {meshInfo.state}");
+                NRDebugger.Debug($"[{this.GetType()}] ProcessMeshDetail {processor.GetType()} {meshInfo.state}");
                 processor.UpdateMeshInfo(identifier,meshInfo);
             }
         }

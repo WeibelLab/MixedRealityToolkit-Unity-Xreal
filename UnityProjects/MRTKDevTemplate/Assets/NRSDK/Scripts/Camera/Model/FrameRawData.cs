@@ -28,6 +28,8 @@ namespace NRKernal
         public UInt32 gain;
         /// <summary> The exposureTime </summary>
         public UInt32 exposureTime;
+        /// <summary> The rawData </summary>
+        public byte[] rawData;
         /// <summary> The texture. </summary>
         public Texture texture;
     }

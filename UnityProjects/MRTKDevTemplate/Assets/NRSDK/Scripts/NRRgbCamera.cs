@@ -34,6 +34,13 @@ namespace NRKernal
             }
         }
 
+        public NativeCamera NativeRGBCamera
+        {
+            get
+            {
+                return CameraDataProvider as NativeCamera;
+            }
+        }
 #if !UNITY_EDITOR
         public NRRgbCamera() : base(new NativeCamera()) { }
 #else

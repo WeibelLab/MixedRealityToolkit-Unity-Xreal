@@ -17,7 +17,8 @@ namespace NRKernal
     {
         public HandEnum handEnum;
         public GameObject jointPrefab;
-
+        [SerializeField]
+        private bool m_ShowMeshInMonoMode = false;
         protected readonly Dictionary<HandJointID, Transform> joints = new Dictionary<HandJointID, Transform>();
 
         private void OnEnable()
@@ -45,7 +46,7 @@ namespace NRKernal
         private void UpdateHandVisual()
         {
             var handState = NRInput.Hands.GetHandState(handEnum);
-            if (handState != null && handState.isTracked)
+            if (handState != null && handState.isTracked && (!NRFrame.MonoMode || (NRFrame.MonoMode && m_ShowMeshInMonoMode)))
             {
                 foreach (var jointID in handState.jointsPoseDict.Keys)
                 {
