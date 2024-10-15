@@ -242,12 +242,15 @@ namespace MixedReality.Toolkit.SpatialManipulation
                         }
                     }
 
-                    if (isValidController && SolverHandler.TransformTarget != null)
+                    if (isValidController)
                     {
-                        if (updateWhenOppositeHandNear || !IsOppositeHandNear(trackedNode))
+                        if (SolverHandler.TransformTarget != null)
                         {
+                            // if (updateWhenOppositeHandNear || !IsOppositeHandNear(trackedNode))
+                            // {
                             GoalPosition = CalculateGoalPosition();
                             GoalRotation = CalculateGoalRotation();
+                            // }
                         }
                     }
                 }
@@ -276,6 +279,9 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     previousHandedness = newHandedness;
                     OnHandActivate.Invoke();
                 }
+
+                // Debug.Log("UpdateWorkingTransforms: Current Working Position: " + WorkingPosition + " Current Working Rotation: " + WorkingRotation);
+                // Debug.Log("UpdateGoalTransforms: Current Goal Position: " + GoalPosition + " Current Goal Rotation: " + GoalRotation);
 
                 UpdateWorkingPositionToGoal();
                 UpdateWorkingRotationToGoal();

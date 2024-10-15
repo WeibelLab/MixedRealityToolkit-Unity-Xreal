@@ -114,11 +114,21 @@ namespace MixedReality.Toolkit
                 Bounds newGlobalBounds = new Bounds(palmPose.Position, Vector3.zero);
                 Bounds newLocalBounds = new Bounds(Vector3.zero, Vector3.zero);
 
+                // Vector3 palmRight = palmPose.Right;      // This is the current 'forwards'
+                // Vector3 palmForward = palmPose.Forward;  // This is what you want 'forwards' to be
+                // Vector3 palmUp = palmPose.Up;            // This is what you want 'up' to be
+
+                // // Create a rotation that maps the current 'palmRight' to 'palmForward'
+                // Quaternion rotation = Quaternion.FromToRotation(palmRight, palmForward);
+                // palmPose.Rotation = rotation * palmPose.Rotation;
+
                 for (int i = 0; i < jointPoses.Count; i++)
                 {
                     newGlobalBounds.Encapsulate(jointPoses[i].Position);
                     newLocalBounds.Encapsulate(Quaternion.Inverse(palmPose.Rotation) * (jointPoses[i].Position - palmPose.Position));
                 }
+
+                // Debug.Log("palmPose.Rotation: " + palmPose.Rotation);
 
                 GlobalBounds[hand] = newGlobalBounds;
                 LocalBounds[hand] = newLocalBounds;

@@ -17,6 +17,9 @@ namespace MixedReality.Toolkit.SpatialManipulation
     [AddComponentMenu("MRTK/Spatial Manipulation/Solvers/Hand Constraint (Palm Up)")]
     public class HandConstraintPalmUp : HandConstraint
     {
+        public GameObject axis_palm;
+        public GameObject axis_normal;
+
         [Header("Palm Up")]
         [SerializeField]
         [FormerlySerializedAs("facingThreshold")]
@@ -146,6 +149,8 @@ namespace MixedReality.Toolkit.SpatialManipulation
         /// </remarks>
         protected override bool IsValidController(XRNode? hand)
         {
+
+            // return true;
             using (IsValidControllerPerfMarker.Auto())
             {
                 if (!base.IsValidController(hand))
@@ -158,13 +163,29 @@ namespace MixedReality.Toolkit.SpatialManipulation
                 if (XRSubsystemHelpers.HandsAggregator != null &&
                     XRSubsystemHelpers.HandsAggregator.TryGetJoint(TrackedHandJoint.Palm, hand.Value, out HandJointPose palmPose))
                 {
-                    float dotProduct = Vector3.Dot(palmPose.Up, Camera.main.transform.forward);
+
+                    // visualize the palm with axis_palm. align axis_palm's up with -palmPose.Forward
+                    // Current vectors from palmPose
+                    // Vector3 palmRight = palmPose.Right;      // This is the current 'forwards'
+                    // Vector3 palmForward = palmPose.Forward;  // This is what you want 'forwards' to be
+                    // Vector3 palmUp = palmPose.Up;            // This is what you want 'up' to be
+
+                    // // Create a rotation that maps the current 'palmRight' to 'palmForward'
+                    // Quaternion rotation = Quaternion.FromToRotation(palmRight, palmForward);
+
+                    // palmPose.Rotation = rotation * palmPose.Rotation;
+                    // Debug.Log("palmPose.Rotation" + palmPose.Rotation);
+                    axis_palm.transform.position = palmPose.Position;
+                    axis_palm.transform.rotation = Quaternion.LookRotation(palmPose.Right, -palmPose.Forward);
+
+                    float dotProduct = Vector3.Dot(-palmPose.Forward, Camera.main.transform.forward);
                     if (dotProduct >= 0)
                     {
                         float palmCameraAngle = Mathf.Acos(dotProduct) * Mathf.Rad2Deg;
 
                         palmFacingThresholdMet = IsPalmMeetingThresholdRequirements(hand.Value, palmPose, palmCameraAngle);
 
+                        Debug.Log("palmCameraAngle" + palmCameraAngle);
                         // If using hybrid hand rotation, we proceed with additional checks
                         if (palmFacingThresholdMet)
                         {
@@ -241,7 +262,13 @@ namespace MixedReality.Toolkit.SpatialManipulation
                                                        ringTipPose.Position - indexTipPose.Position).normalized;
                         handNormal *= (hand.ToHandedness() == Handedness.Right) ? 1.0f : -1.0f;
 
-                        if (Vector3.Angle(palmPose.Up, handNormal) > flatHandThreshold)
+                        // Debug.Log("Vector3.Angle(-palmPose.Forward, handNormal)" + Vector3.Angle(-palmPose.Forward, handNormal));
+
+                        // visualize handNormal with axis_normal. align axis_normal's forward with handNormal
+                        axis_normal.transform.position = palmPose.Position;
+                        axis_normal.transform.rotation = Quaternion.LookRotation(handNormal);
+
+                        if (Vector3.Angle(-palmPose.Forward, handNormal) > flatHandThreshold)
                         {
                             return false;
                         }
@@ -467,7 +494,9 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     if (XRSubsystemHelpers.HandsAggregator != null &&
                         XRSubsystemHelpers.HandsAggregator.TryGetJoint(TrackedHandJoint.Palm, hand.Value, out HandJointPose palmPose))
                     {
-                        float palmCameraAngle = Vector3.Angle(palmPose.Up, Camera.main.transform.forward);
+                        float palmCameraAngle = Vector3.Angle(-palmPose.Forward, Camera.main.transform.forward);
+
+                        Debug.Log("palmCameraAngle" + palmCameraAngle);
                         if (IsPalmMeetingThresholdRequirements(hand.Value, palmPose, palmCameraAngle) &&
                             IsUserGazeMeetingThresholdRequirements(hand.Value))
                         {
