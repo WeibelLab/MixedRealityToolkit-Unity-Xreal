@@ -185,7 +185,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
 
                         palmFacingThresholdMet = IsPalmMeetingThresholdRequirements(hand.Value, palmPose, palmCameraAngle);
 
-                        Debug.Log("palmCameraAngle" + palmCameraAngle);
+                        // Debug.Log("palmCameraAngle" + palmCameraAngle);
                         // If using hybrid hand rotation, we proceed with additional checks
                         if (palmFacingThresholdMet)
                         {
@@ -496,7 +496,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     {
                         float palmCameraAngle = Vector3.Angle(-palmPose.Forward, Camera.main.transform.forward);
 
-                        Debug.Log("palmCameraAngle" + palmCameraAngle);
+                        // Debug.Log("palmCameraAngle" + palmCameraAngle);
                         if (IsPalmMeetingThresholdRequirements(hand.Value, palmPose, palmCameraAngle) &&
                             IsUserGazeMeetingThresholdRequirements(hand.Value))
                         {
