@@ -20,6 +20,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
         public GameObject axis_palm;
         public GameObject axis_normal;
 
+
         [Header("Palm Up")]
         [SerializeField]
         [FormerlySerializedAs("facingThreshold")]
@@ -178,7 +179,8 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     axis_palm.transform.position = palmPose.Position;
                     axis_palm.transform.rotation = Quaternion.LookRotation(palmPose.Right, -palmPose.Forward);
 
-                    float dotProduct = Vector3.Dot(-palmPose.Forward, Camera.main.transform.forward);
+                    // float dotProduct = Vector3.Dot(-palmPose.Forward, Camera.main.transform.forward);
+                    float dotProduct = Vector3.Dot(-palmPose.Forward, mainCamera != null ? mainCamera.transform.forward : Camera.main.transform.forward);
                     if (dotProduct >= 0)
                     {
                         float palmCameraAngle = Mathf.Acos(dotProduct) * Mathf.Rad2Deg;
@@ -314,8 +316,8 @@ namespace MixedReality.Toolkit.SpatialManipulation
                 else
                 {
                     gazeRay = new Ray(
-                        Camera.main.transform.position,
-                        Camera.main.transform.forward);
+                        mainCamera != null ? mainCamera.transform.position : Camera.main.transform.position,
+                        mainCamera != null ? mainCamera.transform.forward : Camera.main.transform.forward);
                 }
 
                 if (gazeRay.HasValue)
@@ -494,7 +496,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     if (XRSubsystemHelpers.HandsAggregator != null &&
                         XRSubsystemHelpers.HandsAggregator.TryGetJoint(TrackedHandJoint.Palm, hand.Value, out HandJointPose palmPose))
                     {
-                        float palmCameraAngle = Vector3.Angle(-palmPose.Forward, Camera.main.transform.forward);
+                        float palmCameraAngle = Vector3.Angle(-palmPose.Forward, mainCamera != null ? mainCamera.transform.forward : Camera.main.transform.forward);
 
                         // Debug.Log("palmCameraAngle" + palmCameraAngle);
                         if (IsPalmMeetingThresholdRequirements(hand.Value, palmPose, palmCameraAngle) &&

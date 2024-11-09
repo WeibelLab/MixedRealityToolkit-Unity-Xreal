@@ -18,7 +18,11 @@ namespace MixedReality.Toolkit.SpatialManipulation
     [AddComponentMenu("MRTK/Spatial Manipulation/Solvers/Hand Constraint")]
     public class HandConstraint : Solver
     {
-        // This array intentionally leaves out AtopPalm. The zones of interest reside
+
+
+        public Camera mainCamera;
+
+        // This array intentionally leaves out AtopPa\lm. The zones of interest reside
         // around, not above the hand.
         private static readonly SolverSafeZone[] handSafeZonesClockWiseRightHand =
             new SolverSafeZone[]
@@ -347,7 +351,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                         if (palmPose.HasValue)
                         {
                             goalPosition = palmPose.Value.Rotation * (localSpaceHit) + palmPose.Value.Position;
-                            Vector3 goalToCam = Camera.main.transform.position - goalPosition;
+                            Vector3 goalToCam = mainCamera != null ? mainCamera.transform.position : Camera.main.transform.position - goalPosition;
                             if (goalToCam.magnitude > Mathf.Epsilon)
                             {
                                 goalPosition += (goalToCam).normalized * ForwardOffset;
@@ -377,7 +381,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                 {
                     case SolverRotationBehavior.LookAtMainCamera:
                         {
-                            goalRotation = Quaternion.LookRotation(GoalPosition - Camera.main.transform.position);
+                            goalRotation = Quaternion.LookRotation(GoalPosition - (mainCamera != null ? mainCamera.transform.position : Camera.main.transform.position));
                         }
                         break;
 
@@ -456,7 +460,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                 Debug.Assert(hand.HasValue);
 
                 Vector3 direction;
-                Vector3 lookAtCamera = targetTransform.transform.position - Camera.main.transform.position;
+                Vector3 lookAtCamera = targetTransform.transform.position - (mainCamera != null ? mainCamera.transform.position : Camera.main.transform.position);
 
                 switch (handSafeZone)
                 {
@@ -508,7 +512,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                             }
                             else
                             {
-                                direction = Camera.main.transform.up;
+                                direction = mainCamera != null ? mainCamera.transform.up : Camera.main.transform.up;
                             }
                         }
                         break;
@@ -521,7 +525,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
                             }
                             else
                             {
-                                direction = -Camera.main.transform.up;
+                                direction = mainCamera != null ? -mainCamera.transform.up : -Camera.main.transform.up;
                             }
                         }
                         break;
@@ -645,7 +649,7 @@ namespace MixedReality.Toolkit.SpatialManipulation
 
             if (palmPose.HasValue)
             {
-                return (Vector3.Dot(palmPose.Value.Up, Camera.main.transform.forward) > 0.0f);
+                return (Vector3.Dot(palmPose.Value.Up, mainCamera != null ? mainCamera.transform.forward : Camera.main.transform.forward) > 0.0f);
             }
 
             return false;
@@ -674,7 +678,16 @@ namespace MixedReality.Toolkit.SpatialManipulation
                     hand.Value,
                     out HandJointPose pose))
                 {
-                    jointPose = pose;
+                    // jointPose = pose;
+                    // axis_palm.transform.position = palmPose.Position;
+                    // axis_palm.transform.rotation = Quaternion.LookRotation(palmPose.Right, -palmPose.Forward);
+                    // because the device palm is using a different convention, we want to rotate the palm so that 
+                    // Forward is old Right, up is old -Forward
+                    jointPose = new HandJointPose
+                    {
+                        Position = pose.Position,
+                        Rotation = Quaternion.LookRotation(pose.Right, -pose.Forward)
+                    };
                 }
 
                 return jointPose;
